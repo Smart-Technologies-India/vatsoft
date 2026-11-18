@@ -66,7 +66,7 @@ const DeleteAddedItemAfterAccept = async (
       });
 
       // Create wallet history entry with -DELETE suffix
-      const invoiceNumberForHistory = `${payload.invoiceNumber}-DELETE`;
+      const invoiceNumberForHistory = `${payload.invoiceNumber}-DELETE-${saleItem.commodity_masterId}`;
       await prisma.liquor_wallet_history.create({
         data: {
           dvatId: payload.dvatId,

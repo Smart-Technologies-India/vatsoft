@@ -21,9 +21,23 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
-import { Table, Button, Spin, Input, Space, Modal, Popconfirm, Select } from "antd";
+import {
+  Table,
+  Button,
+  Spin,
+  Input,
+  Space,
+  Modal,
+  Popconfirm,
+  Select,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { SearchOutlined, FilePdfOutlined, FileExcelOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  FilePdfOutlined,
+  FileExcelOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import ServerTime from "@/action/servertime";
 
 type ReturnsEntryWithRelations = returns_entry & {
@@ -78,7 +92,8 @@ const ReturnsEntryReportPage = () => {
   const [returnsEntries, setReturnsEntries] = useState<
     ReturnsEntryWithRelations[]
   >([]);
-  const [selectedGroup, setSelectedGroup] = useState<GroupedReturnsEntry | null>(null);
+  const [selectedGroup, setSelectedGroup] =
+    useState<GroupedReturnsEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const [filterDvatType, setFilterDvatType] = useState<string>("");
@@ -206,30 +221,41 @@ const ReturnsEntryReportPage = () => {
 
     if (filterDvatType) {
       filtered = filtered.filter(
-        (group) => group.dvat_type?.toLowerCase() === filterDvatType.toLowerCase()
+        (group) =>
+          group.dvat_type?.toLowerCase() === filterDvatType.toLowerCase(),
       );
     }
 
     if (searchInvoiceNo) {
       filtered = filtered.filter((group) =>
-        group.invoice_number?.toLowerCase().includes(searchInvoiceNo.toLowerCase())
+        group.invoice_number
+          ?.toLowerCase()
+          .includes(searchInvoiceNo.toLowerCase()),
       );
     }
 
     if (searchSellerTin) {
       filtered = filtered.filter((group) =>
-        group.tin_number?.toLowerCase().includes(searchSellerTin.toLowerCase())
+        group.tin_number?.toLowerCase().includes(searchSellerTin.toLowerCase()),
       );
     }
 
     if (searchDealerName) {
       filtered = filtered.filter((group) =>
-        group.trade_name?.toLowerCase().includes(searchDealerName.toLowerCase())
+        group.trade_name
+          ?.toLowerCase()
+          .includes(searchDealerName.toLowerCase()),
       );
     }
 
     return filtered;
-  }, [returnsEntries, filterDvatType, searchInvoiceNo, searchSellerTin, searchDealerName]);
+  }, [
+    returnsEntries,
+    filterDvatType,
+    searchInvoiceNo,
+    searchSellerTin,
+    searchDealerName,
+  ]);
 
   const getReturnsEntryColumns = (): ColumnsType<any> => [
     {
@@ -374,7 +400,9 @@ const ReturnsEntryReportPage = () => {
       key: "serialNo",
       width: 60,
       align: "center",
-      render: (_, __, index) => <span className="font-medium">{index + 1}</span>,
+      render: (_, __, index) => (
+        <span className="font-medium">{index + 1}</span>
+      ),
     },
     {
       title: "Invoice Number",
@@ -471,7 +499,6 @@ const ReturnsEntryReportPage = () => {
     },
   ];
 
-
   const handleReverseGroup = async (group: GroupedReturnsEntry) => {
     try {
       if (!returns01Data) {
@@ -482,7 +509,7 @@ const ReturnsEntryReportPage = () => {
       const result = await reverseGroupReturns(
         returns01Data.id,
         group.invoice_number,
-        group.dvat_type
+        group.dvat_type,
       );
 
       if (result.success) {
@@ -527,7 +554,9 @@ const ReturnsEntryReportPage = () => {
     // For now, export as Excel for PDF-like functionality
     // If you need actual PDF, consider using a library like jsPDF or pdfkit
     handleExportToExcel();
-    toast.info("Exported as Excel file. You can open in Excel and print as PDF.");
+    toast.info(
+      "Exported as Excel file. You can open in Excel and print as PDF.",
+    );
   };
 
   if (loading) {
@@ -581,15 +610,10 @@ const ReturnsEntryReportPage = () => {
               >
                 Export to Excel
               </Button>
-              <Button
-                icon={<FilePdfOutlined />}
-                onClick={handleExportToPDF}
-              >
+              <Button icon={<FilePdfOutlined />} onClick={handleExportToPDF}>
                 Export to PDF
               </Button>
-              <Button onClick={() => router.back()}>
-                Back
-              </Button>
+              <Button onClick={() => router.back()}>Back</Button>
             </div>
           </>
         )}
@@ -598,7 +622,8 @@ const ReturnsEntryReportPage = () => {
           <div className="overflow-x-auto">
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Grouped by Invoice Number ({groupedReturnsEntries.length} invoice(s))
+                Grouped by Invoice Number ({groupedReturnsEntries.length}{" "}
+                invoice(s))
               </h2>
 
               {/* Filter and Search Controls */}
@@ -616,12 +641,9 @@ const ReturnsEntryReportPage = () => {
                       style={{ width: "100%" }}
                       options={[
                         { label: "DVAT 30", value: "DVAT_30" },
-                        { label: "DVAT 25", value: "DVAT_25" },
-                        { label: "DVAT 20", value: "DVAT_20" },
-                        { label: "DVAT 15", value: "DVAT_15" },
-                        { label: "DVAT 10", value: "DVAT_10" },
-                        { label: "DVAT 5", value: "DVAT_5" },
-                        { label: "DVAT 0", value: "DVAT_0" },
+                        { label: "DVAT 31", value: "DVAT_31" },
+                        { label: "DVAT 30 A", value: "DVAT_30_A" },
+                        { label: "DVAT 31 A", value: "DVAT_31_A" },
                       ]}
                     />
                   </div>
@@ -663,7 +685,10 @@ const ReturnsEntryReportPage = () => {
                   </div>
                 </div>
 
-                {(filterDvatType || searchInvoiceNo || searchSellerTin || searchDealerName) && (
+                {(filterDvatType ||
+                  searchInvoiceNo ||
+                  searchSellerTin ||
+                  searchDealerName) && (
                   <div className="mt-3">
                     <Button
                       type="text"
@@ -706,7 +731,11 @@ const ReturnsEntryReportPage = () => {
         )}
 
         <Modal
-          title={selectedGroup ? `Invoice ${selectedGroup.invoice_number} Details` : "Details"}
+          title={
+            selectedGroup
+              ? `Invoice ${selectedGroup.invoice_number} Details`
+              : "Details"
+          }
           open={isModalOpen}
           onCancel={() => {
             setIsModalOpen(false);
@@ -714,10 +743,13 @@ const ReturnsEntryReportPage = () => {
           }}
           width={1200}
           footer={[
-            <Button key="close" onClick={() => {
-              setIsModalOpen(false);
-              setSelectedGroup(null);
-            }}>
+            <Button
+              key="close"
+              onClick={() => {
+                setIsModalOpen(false);
+                setSelectedGroup(null);
+              }}
+            >
               Close
             </Button>,
           ]}
@@ -727,19 +759,27 @@ const ReturnsEntryReportPage = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded">
                 <div>
                   <p className="text-gray-600 text-sm">Invoice Number</p>
-                  <p className="font-semibold text-gray-900">{selectedGroup.invoice_number}</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.invoice_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Invoice Date</p>
-                  <p className="font-semibold text-gray-900">{formateDate(selectedGroup.invoice_date)}</p>
+                  <p className="font-semibold text-gray-900">
+                    {formateDate(selectedGroup.invoice_date)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Seller TIN</p>
-                  <p className="font-semibold text-gray-900">{selectedGroup.tin_number || "-"}</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.tin_number || "-"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Dealer Name</p>
-                  <p className="font-semibold text-gray-900">{selectedGroup.trade_name || "-"}</p>
+                  <p className="font-semibold text-gray-900">
+                    {selectedGroup.trade_name || "-"}
+                  </p>
                 </div>
               </div>
 
@@ -752,11 +792,15 @@ const ReturnsEntryReportPage = () => {
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Total Items</p>
-                  <p className="font-bold text-lg text-blue-600">{selectedGroup.records?.length || 0}</p>
+                  <p className="font-bold text-lg text-blue-600">
+                    {selectedGroup.records?.length || 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">Invoice Total</p>
-                  <p className="font-bold text-lg text-blue-600">₹{formatIndianNumber(selectedGroup.totalInvoiceValue || 0)}</p>
+                  <p className="font-bold text-lg text-blue-600">
+                    ₹{formatIndianNumber(selectedGroup.totalInvoiceValue || 0)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600 text-sm">&nbsp;</p>
@@ -765,13 +809,17 @@ const ReturnsEntryReportPage = () => {
               </div>
 
               <div className="mt-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Return Items Details</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Return Items Details
+                </h3>
                 <Table
                   columns={getReturnsEntryColumns()}
-                  dataSource={getTableData(selectedGroup.records).map((item) => ({
-                    ...item,
-                    key: item.key,
-                  }))}
+                  dataSource={getTableData(selectedGroup.records).map(
+                    (item) => ({
+                      ...item,
+                      key: item.key,
+                    }),
+                  )}
                   pagination={{
                     pageSize: 5,
                     total: selectedGroup.records?.length || 0,

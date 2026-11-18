@@ -30,14 +30,18 @@ export const PaymentButtons: React.FC<PaymentButtonsProps> = ({
           <div className="text-sm text-green-600 flex items-center gap-2">
             ✅ Payment Successful!
           </div>
-          {selectedGroup.records.filter(record => !record.is_accept).length > 0 &&
-            <button
-              onClick={onAddItem}
-              className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
-            >
-              Add Item
-            </button>
-          }
+          {selectedGroup.records.filter((record) => !record.is_accept).length >
+            0 &&
+            selectedGroup.records.some(
+              (record) => record.invoice_date >= new Date("2026-11-01"),
+            ) && (
+              <button
+                onClick={onAddItem}
+                className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
+              >
+                Add Item
+              </button>
+            )}
         </>
       ) : (
         <>

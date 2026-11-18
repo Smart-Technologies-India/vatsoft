@@ -41,8 +41,8 @@ const Page = () => {
 
   return (
     <>
-      <main className="bg-linear-to-l py-4 px-4 rounded-md mt-4 w-full xl:w-5/6 xl:mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 justify-between items-center py-1  mx-auto gap-4">
+      <main className="py-2 px-3 mt-2 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mx-auto">
           {[
             "SYSTEM",
             "ADMIN",
@@ -96,25 +96,25 @@ const Page = () => {
                 link="/dashboard/payments/challan-history"
               />
 
-              <DashboardCards
+              {/* <DashboardCards
                 title="Grievance against Payment"
                 description="Submit and track complaints related to VAT payments."
                 link="/dashboard/payments/grievance-against-payment"
-              />
+              /> */}
               {/* <DashboardCards
                 title="Electronic Credit Ledger"
                 description="Check the details and status of your electronic credit ledger for input tax credits."
                 link="/dashboard/payments/challan-history"
               /> */}
-
+              {/* 
               <DashboardCards
                 title="DVAT-21 : Refund Claim Form"
                 description="Apply for and monitor the status of your VAT refund claims."
                 link="/dashboard/payments/refunds"
-              />
+              /> */}
               <DashboardCards
                 title="Refunds History"
-                description="View the history of all your VAT retunds and their statuses."
+                description="View the history of all your VAT refunds and their statuses."
                 link="/dashboard/payments/refunds-history"
               />
               {commodity == "FUEL" && (
@@ -131,6 +131,11 @@ const Page = () => {
                   link="/dashboard/payments/wallet-transactions"
                 />
               )}
+              <DashboardCards
+                title="Refunds Return"
+                description="View the history of all your VAT refunds and their statuses."
+                link="/dashboard/payments/refunds-return"
+              />
             </>
           )}
         </div>

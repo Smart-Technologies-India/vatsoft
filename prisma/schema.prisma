@@ -180,6 +180,7 @@ model user {
   creditdebitnote_createdBy creditdebitnote[] @relation("creditdebitnote_createdBy")
   creditdebitnote_updatedBy creditdebitnote[] @relation("creditdebitnote_updatedBy")
   creditdebitnote_deletedBy creditdebitnote[] @relation("creditdebitnote_deletedBy")
+  walletRefunds             wallet_refund[]
 }
 
 model change {
@@ -379,6 +380,7 @@ model dvat04 {
   walletHistories                 wallet_history[]
   liquorWalletHistories           liquor_wallet_history[]
   dvatblocks                      dvatblock[]
+  walletRefunds                   wallet_refund[]
 
   @@index([createdById], map: "dvat04_createdById_fkey")
   @@index([deletedById], map: "dvat04_deletedById_fkey")
@@ -432,6 +434,7 @@ model liquor_wallet_history {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   deletedAt      DateTime?
+  walletRefunds  wallet_refund[]
 }
 
 model commodity {
@@ -670,6 +673,7 @@ model returns_01 {
   challans          challan[]
   interestWorkings  interest_working[]
   returns01Works    returns_01_work[]
+  walletRefunds     wallet_refund[]
 
   @@index([createdById], map: "returns_01_createdById_fkey")
   @@index([deletedById], map: "returns_01_deletedById_fkey")
@@ -2151,6 +2155,31 @@ model dvatblock {
   created_at DateTime          @default(now())
   updated_at DateTime          @updatedAt
   deleted_at DateTime?
+}
+
+enum WalletStatus {
+  DUE
+  APPROVED
+  REJECTED
+}
+
+model wallet_refund {
+  id                      Int                   @id @default(autoincrement())
+  dvatId                  Int
+  dvat                    dvat04                @relation(fields: [dvatId], references: [id])
+  liquor_wallet_historyId Int
+  liquor_wallet_history   liquor_wallet_history @relation(fields: [liquor_wallet_historyId], references: [id])
+  returnId                Int
+  returns_01              returns_01            @relation(fields: [returnId], references: [id])
+  itc_amount              String
+  cash_amount             String
+  remark                  String?               @db.LongText
+  status                  WalletStatus
+  acceptedbyId            Int?
+  acceptedby              user?                 @relation(fields: [acceptedbyId], references: [id])
+  created_at              DateTime              @default(now())
+  updated_at              DateTime              @updatedAt
+  deleted_at              DateTime?
 }
 
 enum NotificationType {
