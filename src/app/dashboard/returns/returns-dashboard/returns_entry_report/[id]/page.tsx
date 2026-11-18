@@ -21,7 +21,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
-import { Table, Button, Spin, Input, Space, Modal, Popconfirm } from "antd";
+import { Table, Button, Spin, Input, Space, Modal, Popconfirm, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { SearchOutlined, FilePdfOutlined, FileExcelOutlined, DeleteOutlined } from "@ant-design/icons";
 import ServerTime from "@/action/servertime";
@@ -81,11 +81,10 @@ const ReturnsEntryReportPage = () => {
   const [selectedGroup, setSelectedGroup] = useState<GroupedReturnsEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const [searchTerms, setSearchTerms] = useState({
-    invoiceNo: "",
-    tinNumber: "",
-    name: "",
-  });
+  const [filterDvatType, setFilterDvatType] = useState<string>("");
+  const [searchInvoiceNo, setSearchInvoiceNo] = useState<string>("");
+  const [searchSellerTin, setSearchSellerTin] = useState<string>("");
+  const [searchDealerName, setSearchDealerName] = useState<string>("");
 
   const encryptedId = Array.isArray(id) ? id[0] : id;
 
@@ -202,8 +201,35 @@ const ReturnsEntryReportPage = () => {
         (parseFloat(row.vatamount || "0") || 0);
     }
 
-    return Object.values(groups);
-  }, [returnsEntries]);
+    // Apply filters
+    let filtered = Object.values(groups);
+
+    if (filterDvatType) {
+      filtered = filtered.filter(
+        (group) => group.dvat_type?.toLowerCase() === filterDvatType.toLowerCase()
+      );
+    }
+
+    if (searchInvoiceNo) {
+      filtered = filtered.filter((group) =>
+        group.invoice_number?.toLowerCase().includes(searchInvoiceNo.toLowerCase())
+      );
+    }
+
+    if (searchSellerTin) {
+      filtered = filtered.filter((group) =>
+        group.tin_number?.toLowerCase().includes(searchSellerTin.toLowerCase())
+      );
+    }
+
+    if (searchDealerName) {
+      filtered = filtered.filter((group) =>
+        group.trade_name?.toLowerCase().includes(searchDealerName.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [returnsEntries, filterDvatType, searchInvoiceNo, searchSellerTin, searchDealerName]);
 
   const getReturnsEntryColumns = (): ColumnsType<any> => [
     {
@@ -570,10 +596,90 @@ const ReturnsEntryReportPage = () => {
 
         {returnsEntries.length > 0 ? (
           <div className="overflow-x-auto">
-            <div className="mb-4">
+            <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Grouped by Invoice Number ({groupedReturnsEntries.length} invoice(s))
               </h2>
+
+              {/* Filter and Search Controls */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      DVAT Type
+                    </label>
+                    <Select
+                      placeholder="All DVAT Types"
+                      value={filterDvatType || undefined}
+                      onChange={(value) => setFilterDvatType(value || "")}
+                      allowClear
+                      style={{ width: "100%" }}
+                      options={[
+                        { label: "DVAT 30", value: "DVAT_30" },
+                        { label: "DVAT 25", value: "DVAT_25" },
+                        { label: "DVAT 20", value: "DVAT_20" },
+                        { label: "DVAT 15", value: "DVAT_15" },
+                        { label: "DVAT 10", value: "DVAT_10" },
+                        { label: "DVAT 5", value: "DVAT_5" },
+                        { label: "DVAT 0", value: "DVAT_0" },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Invoice Number
+                    </label>
+                    <Input
+                      placeholder="Search invoice..."
+                      value={searchInvoiceNo}
+                      onChange={(e) => setSearchInvoiceNo(e.target.value)}
+                      allowClear
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Seller TIN
+                    </label>
+                    <Input
+                      placeholder="Search seller TIN..."
+                      value={searchSellerTin}
+                      onChange={(e) => setSearchSellerTin(e.target.value)}
+                      allowClear
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Dealer Name
+                    </label>
+                    <Input
+                      placeholder="Search dealer name..."
+                      value={searchDealerName}
+                      onChange={(e) => setSearchDealerName(e.target.value)}
+                      allowClear
+                    />
+                  </div>
+                </div>
+
+                {(filterDvatType || searchInvoiceNo || searchSellerTin || searchDealerName) && (
+                  <div className="mt-3">
+                    <Button
+                      type="text"
+                      size="small"
+                      onClick={() => {
+                        setFilterDvatType("");
+                        setSearchInvoiceNo("");
+                        setSearchSellerTin("");
+                        setSearchDealerName("");
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
             <Table
               columns={getGroupedColumns()}

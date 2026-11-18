@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input, Button, Modal, Select, Space, Spin, Pagination } from "antd";
+import { Input, Button, Modal, Select, Spin, Pagination } from "antd";
 import { toast } from "react-toastify";
 import SearchDvatForBlacklist from "@/action/dvat/searchdvatforblacklist";
 import GetBlacklistedDvats from "@/action/dvat/getblacklisteddvats";
@@ -295,6 +295,16 @@ export default function DvatBlacklistPage() {
   useEffect(() => {
     fetchBlacklistedDvats();
   }, [blacklistPagination.skip, blacklistPagination.take]);
+
+  // Handle filter changes for blacklist
+  useEffect(() => {
+    fetchBlacklistedDvats();
+  }, [
+    selectedCommodity,
+    selectedBlacklistOffice,
+    selectedFrequency,
+    fetchBlacklistedDvats,
+  ]);
 
   // Handle add to redflag
   const handleAddToBlacklist = async () => {

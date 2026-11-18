@@ -11,8 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, Button, Modal, Pagination } from "antd";
-import CreateMultiDailySale from "@/action/stock/createmultidailysale";
-import CreateMultiDailySaleManufacturer from "@/action/stock/createmultidailysalemanufacturer";
+import BulkDailySale from "@/action/stock/bulkdailysale";
+import BulkDailySaleManufacturer from "@/action/stock/bulkdailysalemanufacturer";
 import GetAllStock from "@/action/stock/getallstock";
 import GetAllDvat04 from "@/action/dvat/getalldvat";
 import * as XLSX from "xlsx";
@@ -115,6 +115,21 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       available: number;
     }>
   >([]);
+
+  const [isFailedEntriesModalOpen, setIsFailedEntriesModalOpen] =
+    useState(false);
+  const [failedEntriesData, setFailedEntriesData] = useState<
+    Array<{
+      invoice_number: string;
+      error: string;
+      commodity_id?: number;
+      commodity_name?: string;
+      invoice_date?: Date | string;
+      quantity?: number;
+    }>
+  >([]);
+  const [failedCurrentPage, setFailedCurrentPage] = useState<number>(1);
+  const [failedPageSize, setFailedPageSize] = useState<number>(10);
 
   const router = useRouter();
 
@@ -466,7 +481,6 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         }
       } catch (error) {
         toast.error("Error validating stock quantities.");
-        console.error(error);
         return;
       }
     }
@@ -526,47 +540,171 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     });
 
     setIsBulkUploading(true);
-    const CHUNK_SIZE = 300;
-    const totalChunks = Math.ceil(entries.length / CHUNK_SIZE);
-    setBulkUploadProgress({
-      currentChunk: 0,
-      totalChunks,
-      uploadedRows: 0,
-      totalRows: entries.length,
-    });
 
     try {
-      for (let index = 0; index < entries.length; index += CHUNK_SIZE) {
-        const chunk = entries.slice(index, index + CHUNK_SIZE);
-        const currentChunk = Math.floor(index / CHUNK_SIZE) + 1;
+      // For manufacturer uploads using optimized action, simulate progress
+      if (isManufacturerBulkUpload || [821, 35].includes(dvatdata.id)) {
+        setBulkUploadProgress({
+          currentChunk: 1,
+          totalChunks: 1,
+          uploadedRows: 0,
+          totalRows: entries.length,
+        });
 
-        setBulkUploadProgress((prev) => ({
-          ...prev,
-          currentChunk,
-        }));
+        try {
+          let startTime = Date.now();
+          let isProcessing = true;
 
-        const response =
-          isManufacturerBulkUpload || [821, 35].includes(dvatdata.id)
-            ? await CreateMultiDailySaleManufacturer({ entries: chunk })
-            : await CreateMultiDailySale({ entries: chunk });
+          // Start simulated progress updates every 300ms with time-based calculation
+          const progressInterval = setInterval(() => {
+            if (!isProcessing) {
+              clearInterval(progressInterval);
+              return;
+            }
 
-        if (!response.status) {
-          toast.error(response.message);
-          return;
+            setBulkUploadProgress((prev) => {
+              if (!isProcessing || prev.uploadedRows >= prev.totalRows * 0.95) {
+                return prev;
+              }
+
+              // Calculate progress based on elapsed time and row count
+              const elapsedSeconds = (Date.now() - startTime) / 1000;
+              const estimatedRowsPerSecond = Math.max(10, prev.totalRows / 15); // Assume ~15 seconds for processing
+              const estimatedUploadedRows = Math.min(
+                Math.floor(elapsedSeconds * estimatedRowsPerSecond),
+                Math.floor(prev.totalRows * 0.95), // Cap at 95% while processing
+              );
+
+              return {
+                ...prev,
+                uploadedRows: Math.max(
+                  prev.uploadedRows,
+                  estimatedUploadedRows,
+                ),
+              };
+            });
+          }, 300);
+
+          // Call the optimized bulk action
+          const response = await BulkDailySaleManufacturer({ entries });
+
+          // Stop progress simulation
+          isProcessing = false;
+          clearInterval(progressInterval);
+
+          if (!response.status) {
+            toast.error(response.message);
+            return;
+          }
+
+          // Update progress to 100% on completion
+          setBulkUploadProgress((prev) => ({
+            ...prev,
+            uploadedRows: prev.totalRows, // Set to total to show 100%
+          }));
+
+          if (response.data?.failedCount && response.data.failedCount > 0) {
+            // Show failed entries in modal
+            if (response.data.failedEntries && response.data.failedEntries.length > 0) {
+              setFailedEntriesData(response.data.failedEntries);
+              setFailedCurrentPage(1);
+              setIsFailedEntriesModalOpen(true);
+            }
+            toast.warning(
+              `Bulk upload completed. ${response.data.createdCount} row(s) uploaded, ${response.data.failedCount} failed.`,
+            );
+          } else {
+            toast.success(
+              `Bulk upload successful. ${response.data?.createdCount ?? entries.length} row(s) uploaded.`,
+            );
+          }
+        } catch (error) {
+          toast.error("Bulk upload failed. Please try again.");
         }
+      } else {
+        // For non-manufacturer uploads, use the optimized bulk action
+        const totalRows = entries.length;
 
-        setBulkUploadProgress((prev) => ({
-          ...prev,
-          uploadedRows: Math.min(
-            prev.uploadedRows + chunk.length,
-            prev.totalRows,
-          ),
-        }));
+        setBulkUploadProgress({
+          currentChunk: 1,
+          totalChunks: 1,
+          uploadedRows: 0,
+          totalRows,
+        });
+
+        try {
+          let startTime = Date.now();
+          let isProcessing = true;
+
+          // Start simulated progress updates every 300ms with time-based calculation
+          const progressInterval = setInterval(() => {
+            if (!isProcessing) {
+              clearInterval(progressInterval);
+              return;
+            }
+
+            setBulkUploadProgress((prev) => {
+              if (!isProcessing || prev.uploadedRows >= prev.totalRows * 0.95) {
+                return prev;
+              }
+
+              // Calculate progress based on elapsed time and row count
+              const elapsedSeconds = (Date.now() - startTime) / 1000;
+              const estimatedRowsPerSecond = Math.max(10, prev.totalRows / 15); // Assume ~15 seconds for processing
+              const estimatedUploadedRows = Math.min(
+                Math.floor(elapsedSeconds * estimatedRowsPerSecond),
+                Math.floor(prev.totalRows * 0.95), // Cap at 95% while processing
+              );
+
+              return {
+                ...prev,
+                uploadedRows: Math.max(
+                  prev.uploadedRows,
+                  estimatedUploadedRows,
+                ),
+              };
+            });
+          }, 300);
+
+          // Call the optimized bulk action
+          const response = await BulkDailySale({ entries });
+
+          // Stop progress simulation
+          isProcessing = false;
+          clearInterval(progressInterval);
+
+          if (!response.status) {
+            toast.error(response.message);
+            return;
+          }
+
+          // Update progress to 100% on completion
+          setBulkUploadProgress((prev) => ({
+            ...prev,
+            uploadedRows: prev.totalRows, // Set to total to show 100%
+          }));
+
+          if (response.data?.failedCount && response.data.failedCount > 0) {
+            // Show failed entries in modal
+            if (response.data.failedEntries && response.data.failedEntries.length > 0) {
+              setFailedEntriesData(response.data.failedEntries);
+              setFailedCurrentPage(1);
+              setIsFailedEntriesModalOpen(true);
+            }
+            toast.warning(
+              `Bulk upload completed. ${response.data.createdCount} row(s) uploaded, ${response.data.failedCount} failed.`,
+            );
+          } else {
+            toast.success(
+              `Bulk upload successful. ${response.data?.createdCount ?? totalRows} row(s) uploaded.`,
+            );
+          }
+        } catch (error) {
+          toast.error("Bulk upload failed. Please try again.");
+          console.error(error);
+        }
       }
 
-      toast.success(
-        `Bulk upload successful. ${entries.length} row(s) uploaded.`,
-      );
       setIsBulkModalOpen(false);
       setSheetFileName("");
       setTableData([]);
@@ -584,6 +722,56 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
   const getPeriodKey = (year: string | number, month: string) =>
     `${year}-${month}`;
+
+  const handleDownloadFailedEntries = () => {
+    if (failedEntriesData.length === 0) {
+      toast.error("No failed entries to download");
+      return;
+    }
+
+    try {
+      // Create worksheet data
+      const worksheetData = [
+        ["Sr. No.", "Invoice Number", "Invoice Date", "Commodity ID", "Commodity Name", "Quantity", "Error Reason"],
+        ...failedEntriesData.map((row, index) => [
+          index + 1,
+          row.invoice_number,
+          row.invoice_date ? new Date(row.invoice_date).toLocaleDateString("en-IN") : "N/A",
+          row.commodity_id ?? "N/A",
+          row.commodity_name ?? "N/A",
+          row.quantity ?? "N/A",
+          row.error,
+        ]),
+      ];
+
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Failed Entries",
+      );
+
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 8 }, // Sr. No.
+        { wch: 20 }, // Invoice Number
+        { wch: 15 }, // Invoice Date
+        { wch: 15 }, // Commodity ID
+        { wch: 25 }, // Commodity Name
+        { wch: 12 }, // Quantity
+        { wch: 60 }, // Error Reason
+      ];
+
+      const fileName = `failed_entries_${Date.now()}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast.success(`Downloaded ${failedEntriesData.length} failed entries`);
+    } catch (error) {
+      toast.error("Failed to download failed entries");
+      console.error(error);
+    }
+  };
 
   const handleDownloadUnacceptedSales = async () => {
     if (!dvatdata) {
@@ -1624,20 +1812,40 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         }}
       >
         {isBulkUploading && bulkUploadProgress.totalRows > 0 && (
-          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
-            <p>
-              Uploading chunk {bulkUploadProgress.currentChunk} of{" "}
-              {bulkUploadProgress.totalChunks}
+          <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm text-blue-800">
+            <p className="font-semibold mb-2">
+              {bulkUploadProgress.totalChunks > 1
+                ? `Uploading chunk ${bulkUploadProgress.currentChunk} of ${bulkUploadProgress.totalChunks}`
+                : "Processing upload..."}
             </p>
-            <p>
+            <div className="mb-2 flex items-center gap-2">
+              <div className="flex-1 bg-blue-200 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-blue-600 h-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.floor(
+                        (bulkUploadProgress.uploadedRows /
+                          bulkUploadProgress.totalRows) *
+                          100,
+                      ),
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+              <span className="font-semibold whitespace-nowrap">
+                {Math.floor(
+                  (bulkUploadProgress.uploadedRows /
+                    bulkUploadProgress.totalRows) *
+                    100,
+                )}
+                %
+              </span>
+            </div>
+            <p className="text-xs text-blue-700">
               Uploaded {bulkUploadProgress.uploadedRows} /{" "}
-              {bulkUploadProgress.totalRows} rows (
-              {Math.floor(
-                (bulkUploadProgress.uploadedRows /
-                  bulkUploadProgress.totalRows) *
-                  100,
-              )}
-              %)
+              {bulkUploadProgress.totalRows} rows
             </p>
           </div>
         )}
@@ -1902,6 +2110,113 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
               ))}
             </TableBody>
           </Table>
+        </div>
+      </Modal>
+
+      <Modal
+        title="Failed Entries"
+        open={isFailedEntriesModalOpen}
+        onCancel={() => setIsFailedEntriesModalOpen(false)}
+        width={1300}
+        footer={[
+          <Button
+            key="download"
+            type="primary"
+            onClick={handleDownloadFailedEntries}
+          >
+            Download Failed Entries (Excel)
+          </Button>,
+          <Button
+            key="close"
+            onClick={() => setIsFailedEntriesModalOpen(false)}
+          >
+            Close
+          </Button>,
+        ]}
+      >
+        <div className="space-y-4">
+          <Alert
+            message={`${failedEntriesData.length} entries failed validation. Review the errors below and fix the data before re-uploading.`}
+            type="warning"
+            showIcon
+            closable
+          />
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Sr. No.
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Invoice Number
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Invoice Date
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Commodity ID
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Commodity Name
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Quantity
+                  </TableHead>
+                  <TableHead className="p-2 border bg-gray-100 font-semibold">
+                    Error Reason
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {failedEntriesData
+                  .slice(
+                    (failedCurrentPage - 1) * failedPageSize,
+                    failedCurrentPage * failedPageSize,
+                  )
+                  .map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="p-2 border text-center">
+                        {(failedCurrentPage - 1) * failedPageSize + index + 1}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center font-medium">
+                        {row.invoice_number}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-sm">
+                        {row.invoice_date 
+                          ? new Date(row.invoice_date).toLocaleDateString("en-IN")
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-sm">
+                        {row.commodity_id ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="p-2 border text-sm">
+                        {row.commodity_name ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="p-2 border text-center text-sm">
+                        {row.quantity ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="p-2 border text-red-600 text-sm">
+                        {row.error}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {failedEntriesData.length > failedPageSize && (
+            <div className="flex justify-center mt-4">
+              <Pagination
+                current={failedCurrentPage}
+                pageSize={failedPageSize}
+                total={failedEntriesData.length}
+                onChange={setFailedCurrentPage}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 

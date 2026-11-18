@@ -6,7 +6,7 @@ import prisma from "../../../prisma/database";
 export async function reverseGroupReturns(
   returns01Id: number,
   invoiceNumber: string,
-  dvatType: string
+  dvatType: string,
 ) {
   try {
     const userId = await getCurrentUserId();
@@ -43,6 +43,7 @@ export async function reverseGroupReturns(
       data: {
         deletedAt: new Date(),
         deletedById: userId,
+        status: "INACTIVE",
       },
     });
 
@@ -56,7 +57,7 @@ export async function reverseGroupReturns(
           deletedAt: null,
         },
         data: {
-          is_accept: false,
+          is_dvat_30a: false,
         },
       });
     } else if (dvatType === "DVAT_31" || dvatType === "DVAT_31_A") {
@@ -67,7 +68,7 @@ export async function reverseGroupReturns(
           deletedAt: null,
         },
         data: {
-          is_accept: false,
+          is_dvat_31: false,
         },
       });
     }

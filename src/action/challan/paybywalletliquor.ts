@@ -55,6 +55,32 @@ export const PayByWalletLiquor = async (input: {
       ? `${input.invoiceNo}-ADD`
       : input.invoiceNo;
 
+    // Check if liquor_wallet_history already exists
+    const existingWalletHistory = await prisma.liquor_wallet_history.findFirst({
+      where: {
+        dvatId: dvatId,
+        invoice_number: invoiceNumberForHistory,
+        status: "ACTIVE",
+        deletedAt: null,
+      },
+    });
+
+    // If data already exists and isAddItem is false, return early without creating/updating
+    if (existingWalletHistory && !input.isAddItem) {
+      return {
+        status: true,
+        message: "Payment record already exists. No changes made.",
+        data: {
+          old_wallet: oldWallet.toFixed(2),
+          new_wallet: oldWallet.toFixed(2),
+          wallet_deduction: "0.00",
+        },
+      };
+    }
+
+    // If data already exists and isAddItem is true, proceed with update
+    // If data doesn't exist, proceed with creation
+
     // Update DVAT04 wallet
     await prisma.dvat04.update({
       where: { id: dvatId, deletedAt: null },
@@ -62,21 +88,22 @@ export const PayByWalletLiquor = async (input: {
         wallet: newWallet.toFixed(2),
       },
     });
-    console.log(input.sellerId)
 
-    // Create wallet history entry
-    await prisma.liquor_wallet_history.create({
-      data: {
-        dvatId: dvatId,
-        sellerId: input.sellerId,
-        type: "DEBIT",
-        old_wallet: oldWallet.toFixed(2),
-        new_wallet: newWallet.toFixed(2),
-        invoice_number: invoiceNumberForHistory,
-        status: "ACTIVE",
-        amount: walletDeduction.toFixed(2),
-      },
-    });
+    // Create or skip wallet history entry based on existing data
+    if (!existingWalletHistory) {
+      await prisma.liquor_wallet_history.create({
+        data: {
+          dvatId: dvatId,
+          sellerId: input.sellerId,
+          type: "DEBIT",
+          old_wallet: oldWallet.toFixed(2),
+          new_wallet: newWallet.toFixed(2),
+          invoice_number: invoiceNumberForHistory,
+          status: "ACTIVE",
+          amount: walletDeduction.toFixed(2),
+        },
+      });
+    }
 
     await prisma.daily_sale.updateMany({
       where: {
@@ -156,7 +183,6 @@ export const PayByWalletLiquor = async (input: {
       },
     };
   } catch (error) {
-    console.error("Error in PayByWalletLiquor:", error);
     return {
       status: false,
       message:

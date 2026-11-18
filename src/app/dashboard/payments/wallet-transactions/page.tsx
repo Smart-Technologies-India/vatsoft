@@ -26,12 +26,55 @@ import GetUserDvat04 from "@/action/dvat/getuserdvat";
 import { getAuthenticatedUserId } from "@/action/auth/getuserid";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import * as XLSX from "xlsx";
+import { FileExcelOutlined } from "@ant-design/icons";
 
 const WalletTransactionsPage = () => {
   const router = useRouter();
   const [userid, setUserid] = useState<number>(0);
   const [isLoading, setLoading] = useState<boolean>(true);
   const [isSearch, setSearch] = useState<boolean>(false);
+
+  const formatCurrency = (value: string | number) => {
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    return Number.isFinite(num) ? num.toFixed(2) : "0.00";
+  };
+
+  const handleExportToExcel = () => {
+    if (walletTransactionsData.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = walletTransactionsData.map((record, index) => ({
+      "Sr. No.": pagination.skip + index + 1,
+      "Invoice Number": record.invoice_number,
+      "Transaction Type": record.type,
+      Amount: `₹ ${formatCurrency(
+        Math.abs(parseFloat(record.old_wallet || "0") - parseFloat(record.new_wallet || "0"))
+      )}`,
+      Date: formateDate(record.createdAt),
+      Status: record.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Wallet Transactions");
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 8 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    XLSX.writeFile(workbook, `Wallet-Transactions-${new Date().getTime()}.xlsx`);
+    toast.success("Wallet transactions exported successfully");
+  };
 
   const [pagination, setPaginatin] = useState<{
     take: number;
@@ -73,11 +116,6 @@ const WalletTransactionsPage = () => {
     UserLiquorWalletTransactionWithRelations[]
   >([]);
   const [dvatdata, setDvatData] = useState<dvat04 | null>(null);
-
-  const formatCurrency = (value: string | number) => {
-    const num = typeof value === "string" ? parseFloat(value) : value;
-    return Number.isFinite(num) ? num.toFixed(2) : "0.00";
-  };
 
   const init = async () => {
     setLoading(true);
@@ -273,11 +311,21 @@ const WalletTransactionsPage = () => {
             <h1 className="text-2xl font-semibold text-gray-900">
               Wallet History
             </h1>
-            <Link href="/dashboard/payments/add-liquor-wallet-transaction">
-              <Button type="primary" size="large">
-                Recharge Wallet
+            <div className="flex gap-2">
+              <Button
+                type="default"
+                size="large"
+                icon={<FileExcelOutlined />}
+                onClick={handleExportToExcel}
+              >
+                Export to Excel
               </Button>
-            </Link>
+              <Link href="/dashboard/payments/add-liquor-wallet-transaction">
+                <Button type="primary" size="large">
+                  Recharge Wallet
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 ">
