@@ -1,450 +1,473 @@
 "use client";
 
-import { Alert, Button, Input, Pagination } from "antd";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type { InputRef, RadioChangeEvent } from "antd";
-import { Radio, DatePicker } from "antd";
-import { useEffect, useRef, useState } from "react";
-const { RangePicker } = DatePicker;
-import type { Dayjs } from "dayjs";
-import { refunds, user } from "@prisma/client";
-import { encryptURLData, formateDate, generatePDF } from "@/utils/methods";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import SearchRefunds from "@/action/refund/searchrefunds";
-import GetDeptRefunds from "@/action/refund/getdeptrefunds";
-import GetUser from "@/action/user/getuser";
-import { MdiDownload } from "@/components/icons";
-import { getAuthenticatedUserId } from "@/action/auth/getuserid";
-import { useRouter } from "next/navigation";
-import { getCurrentUserRole } from "@/lib/auth";
+import {
+  Button,
+  Spin,
+  Divider,
+  Table,
+  Modal,
+  Input,
+  Space,
+  Tag,
+  Select,
+} from "antd";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  SearchOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import SearchWalletRefunds from "@/action/payments/searchwalletrefunds";
+import ApproveWalletRefund from "@/action/payments/approvewalletrefund";
+import RejectWalletRefund from "@/action/payments/rejectwalletrefund";
 
-const RefundsHistory = () => {
-  const router = useRouter();
-  const [userid, setUserid] = useState<number>(0);
-  const [isLoading, setLoading] = useState<boolean>(true);
-  const [isSearch, setSearch] = useState<boolean>(false);
+interface AdminRefundRequestData {
+  id: number;
+  dvatId: number;
+  returnId: number;
+  itc_amount: string;
+  cash_amount: string;
+  remark: string | null;
+  status: string;
+  created_at: Date;
+  dvat_name: string;
+  dvat_tin: string;
+  rr_number: string;
+  return_month: string | null;
+  return_quarter: string | null;
+  return_year: string;
+  return_status: string;
+  total_tax_amount: string | null;
+  filing_datetime: Date | null;
+}
 
-  const [pagination, setPaginatin] = useState<{
-    take: number;
-    skip: number;
-    total: number;
-  }>({
-    take: 10,
-    skip: 0,
+const RefundsHistoryPage = () => {
+  const [loading, setLoading] = useState(false);
+  const [refundRequests, setRefundRequests] = useState<
+    AdminRefundRequestData[]
+  >([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<"approve" | "reject">("approve");
+  const [selectedRefund, setSelectedRefund] =
+    useState<AdminRefundRequestData | null>(null);
+  const [remark, setRemark] = useState("");
+
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState("DUE");
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 15,
     total: 0,
   });
 
-  enum SearchOption {
-    CPIN,
-    DATE,
-  }
-
-  const [searchOption, setSeachOption] = useState<SearchOption>(
-    SearchOption.CPIN,
-  );
-
-  const onChange = (e: RadioChangeEvent) => {
-    setSeachOption(e.target.value);
-  };
-
-  const cpinRef = useRef<InputRef>(null);
-
-  const [searchDate, setSearchDate] = useState<
-    [Dayjs | null, Dayjs | null] | null
-  >(null);
-
-  const onChangeDate = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string],
-  ) => {
-    setSearchDate(dates);
-  };
-  const [user, setUpser] = useState<user | null>(null);
-
-  const [refundsData, setRefundsData] = useState<refunds[]>([]);
-  const init = async () => {
-    setLoading(true);
-
-    const userrespone = await GetUser({ id: userid });
-    if (userrespone.status && userrespone.data) {
-      setUpser(userrespone.data);
-
-      const refunds_resposne = await GetDeptRefunds({
-        dept: userrespone.data.selectOffice!,
-        take: 10,
-        skip: 0,
-      });
-      if (refunds_resposne.data && refunds_resposne.data.result) {
-        setRefundsData(refunds_resposne.data.result);
-        setPaginatin({
-          skip: refunds_resposne.data.skip,
-          take: refunds_resposne.data.take,
-          total: refunds_resposne.data.total,
-        });
-      }
-    }
-    setSearch(false);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    const init = async () => {
+    loadData();
+  }, []);
+
+  const loadData = async (page: number = 1, search: string = searchText, status: string = statusFilter) => {
+    try {
       setLoading(true);
-      const authResponse = await getAuthenticatedUserId();
-      if (!authResponse.status || !authResponse.data) {
-        toast.error(authResponse.message);
-        return router.push("/");
+      const skip = (page - 1) * pagination.pageSize;
+
+      const response = await SearchWalletRefunds({
+        search: search,
+        status: status,
+        skip,
+        take: pagination.pageSize,
+      });
+
+      if (response.status && response.data) {
+        setRefundRequests(response.data);
+        setPagination((prev) => ({
+          ...prev,
+          current: page,
+          total: response.total || 0,
+        }));
+      } else {
+        setRefundRequests([]);
+        toast.error("Failed to load refund requests");
       }
-      setUserid(authResponse.data);
-
-      const userrole = await getCurrentUserRole();
-      if (userrole == "USER" || userrole == null || userrole == undefined) {
-        return router.back();
-      }
-      const userrespone = await GetUser({ id: authResponse.data });
-      if (userrespone.status && userrespone.data) {
-        setUpser(userrespone.data);
-
-        const refunds_resposne = await GetDeptRefunds({
-          dept: userrespone.data.selectOffice!,
-          take: 10,
-          skip: 0,
-        });
-
-        if (refunds_resposne.data && refunds_resposne.data.result) {
-          setRefundsData(refunds_resposne.data.result);
-          setPaginatin({
-            skip: refunds_resposne.data.skip,
-            take: refunds_resposne.data.take,
-            total: refunds_resposne.data.total,
-          });
-        }
-      }
-
+    } catch (error) {
+      setRefundRequests([]);
+    } finally {
       setLoading(false);
-    };
-    init();
-  }, [userid]);
-
-  const cpinsearch = async () => {
-    if (
-      cpinRef.current?.input?.value == undefined ||
-      cpinRef.current?.input?.value == null ||
-      cpinRef.current?.input?.value == ""
-    ) {
-      return toast.error("Enter cpin");
-    }
-    const search_response = await SearchRefunds({
-      cpin: cpinRef.current?.input?.value,
-      dept: user!.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
-    if (search_response.status && search_response.data.result) {
-      setRefundsData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
     }
   };
 
-  const datesearch = async () => {
-    if (searchDate == null || searchDate.length <= 1) {
-      return toast.error("Select state date and end date");
-    }
+  const handleSearch = () => {
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    loadData(1, searchText, statusFilter);
+  };
 
-    const search_response = await SearchRefunds({
-      fromdate: searchDate[0]?.toDate(),
-      todate: searchDate[1]?.toDate(),
-      dept: user!.selectOffice!,
-      take: 10,
-      skip: 0,
-    });
-    if (search_response.status && search_response.data.result) {
-      setRefundsData(search_response.data.result);
-      setPaginatin({
-        skip: search_response.data.skip,
-        take: search_response.data.take,
-        total: search_response.data.total,
-      });
-      setSearch(true);
+  const handleFilterChange = (filterType: string, value: string) => {
+    if (filterType === "status") {
+      setStatusFilter(value || "");
+      setPagination((prev) => ({ ...prev, current: 1 }));
+      loadData(1, searchText, value || "");
     }
   };
 
-  const onChangePageCount = async (page: number, pagesize: number) => {
-    if (isSearch) {
-      if (searchOption == SearchOption.CPIN) {
-        if (
-          cpinRef.current?.input?.value == undefined ||
-          cpinRef.current?.input?.value == null ||
-          cpinRef.current?.input?.value == ""
-        ) {
-          return toast.error("Enter cpin");
-        }
-        const search_response = await SearchRefunds({
-          cpin: cpinRef.current?.input?.value,
-          dept: user!.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
+  const handleClear = () => {
+    setSearchText("");
+    setStatusFilter("");
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    loadData(1, "", "");
+  };
 
-        if (search_response.status && search_response.data.result) {
-          setRefundsData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
-      } else if (searchOption == SearchOption.DATE) {
-        if (searchDate == null || searchDate.length <= 1) {
-          return toast.error("Select state date and end date");
-        }
+  const showApproveModal = (record: AdminRefundRequestData) => {
+    setSelectedRefund(record);
+    setModalMode("approve");
+    setRemark("");
+    setModalVisible(true);
+  };
 
-        const search_response = await SearchRefunds({
-          fromdate: searchDate[0]?.toDate(),
-          todate: searchDate[1]?.toDate(),
-          dept: user!.selectOffice!,
-          take: pagesize,
-          skip: pagesize * (page - 1),
-        });
+  const showRejectModal = (record: AdminRefundRequestData) => {
+    setSelectedRefund(record);
+    setModalMode("reject");
+    setRemark("");
+    setModalVisible(true);
+  };
 
-        if (search_response.status && search_response.data.result) {
-          setRefundsData(search_response.data.result);
-          setPaginatin({
-            skip: search_response.data.skip,
-            take: search_response.data.take,
-            total: search_response.data.total,
-          });
-          setSearch(true);
-        }
+  const handleApprove = async () => {
+    if (!selectedRefund) return;
+    if (!remark.trim()) {
+      toast.error("Please enter a remark");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await ApproveWalletRefund({
+        walletRefundId: selectedRefund.id,
+        remark: remark,
+      });
+
+      if (response.status) {
+        toast.success("Refund request approved successfully!");
+        setModalVisible(false);
+        setRemark("");
+        loadData(pagination.current);
+      } else {
+        toast.error(response.message || "Failed to approve refund request");
       }
-    } else {
-      const refunds_resposne = await GetDeptRefunds({
-        dept: user!.selectOffice!,
-        take: pagesize,
-        skip: pagesize * (page - 1),
-      });
-      if (refunds_resposne.status && refunds_resposne.data.result) {
-        setRefundsData(refunds_resposne.data.result);
-        setPaginatin({
-          skip: refunds_resposne.data.skip,
-          take: refunds_resposne.data.take,
-          total: refunds_resposne.data.total,
-        });
-      }
+    } catch (error) {
+      toast.error("Error approving refund request");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (isLoading)
-    return (
-      <div className="h-screen w-full grid place-items-center text-3xl text-gray-600 bg-gray-200">
-        Loading...
-      </div>
-    );
+  const handleReject = async () => {
+    if (!selectedRefund) return;
+    if (!remark.trim()) {
+      toast.error("Please enter a remark");
+      return;
+    }
 
-  return (
-    <>
-      <div className="p-2">
-        <div className="bg-white p-2 shadow mt-4">
-          <div className="bg-blue-500 p-2 text-white">Refunds History</div>
-          <div className="p-2 bg-gray-50 mt-2 flex flex-col md:flex-row lg:gap-2 lg:items-center">
-            <Radio.Group
-              onChange={onChange}
-              value={searchOption}
-              className="mt-2"
-              disabled={isSearch}
-            >
-              <Radio value={SearchOption.CPIN}>CPIN</Radio>
-              <Radio value={SearchOption.DATE}>DATE</Radio>
-            </Radio.Group>
-            <div className="mt-2"></div>
-            {(() => {
-              switch (searchOption) {
-                case SearchOption.CPIN:
-                  return (
-                    <div className="flex gap-2">
-                      <Input
-                        className="w-60"
-                        ref={cpinRef}
-                        placeholder={"Enter CPIN"}
-                        disabled={isSearch}
-                      />
+    try {
+      setLoading(true);
+      const response = await RejectWalletRefund({
+        walletRefundId: selectedRefund.id,
+        remark: remark,
+      });
 
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button onClick={cpinsearch} type="primary">
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
+      if (response.status) {
+        toast.success("Refund request rejected successfully!");
+        setModalVisible(false);
+        setRemark("");
+        loadData(pagination.current);
+      } else {
+        toast.error(response.message || "Failed to reject refund request");
+      }
+    } catch (error) {
+      toast.error("Error rejecting refund request");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                case SearchOption.DATE:
-                  return (
-                    <div className="flex gap-2">
-                      <RangePicker
-                        onChange={onChangeDate}
-                        disabled={isSearch}
-                      />
-
-                      {isSearch ? (
-                        <Button onClick={init} type="primary">
-                          Reset
-                        </Button>
-                      ) : (
-                        <Button type="primary" onClick={datesearch}>
-                          Search
-                        </Button>
-                      )}
-                    </div>
-                  );
-                default:
-                  return null;
-              }
-            })()}
-          </div>
-
-          {refundsData.length == 0 && (
-            <Alert
-              style={{
-                marginTop: "10px",
-                padding: "8px",
-              }}
-              type="error"
-              showIcon
-              description="There is no refunds."
-            />
-          )}
-
-          {refundsData.length > 0 && (
+  const columns = [
+    {
+      title: "DVAT Name",
+      dataIndex: "dvat_name",
+      key: "dvat_name",
+      width: 100,
+    },
+    {
+      title: "TIN",
+      dataIndex: "dvat_tin",
+      key: "dvat_tin",
+      width: 80,
+    },
+    {
+      title: "RR #",
+      dataIndex: "rr_number",
+      key: "rr_number",
+      width: 90,
+    },
+    {
+      title: "Period",
+      dataIndex: "return_month",
+      key: "return_period",
+      width: 90,
+      render: (text: string, record: AdminRefundRequestData) =>
+        record.return_month
+          ? `${record.return_month} ${record.return_year}`
+          : `Q${record.return_quarter} ${record.return_year}`,
+    },
+    {
+      title: "Filing Date",
+      dataIndex: "filing_datetime",
+      key: "filing_datetime",
+      width: 85,
+      render: (date: Date) =>
+        date ? new Date(date).toLocaleDateString("en-IN") : "N/A",
+    },
+    {
+      title: "Return Sts",
+      dataIndex: "return_status",
+      key: "return_status",
+      width: 75,
+      render: (text: string) => {
+        const statusColors: { [key: string]: string } = {
+          PAID: "green",
+          DUE: "orange",
+          REJECTED: "red",
+        };
+        return <Tag color={statusColors[text] || "default"}>{text}</Tag>;
+      },
+    },
+    {
+      title: "ITC (₹)",
+      dataIndex: "itc_amount",
+      key: "itc_amount",
+      width: 80,
+      render: (text: string) => `₹${parseFloat(text).toFixed(0)}`,
+    },
+    {
+      title: "Cash (₹)",
+      dataIndex: "cash_amount",
+      key: "cash_amount",
+      width: 80,
+      render: (text: string) => `₹${parseFloat(text).toFixed(0)}`,
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 70,
+      render: (text: string) => {
+        const statusColors: { [key: string]: string } = {
+          DUE: "orange",
+          APPROVED: "green",
+          REJECTED: "red",
+        };
+        return <Tag color={statusColors[text] || "default"}>{text}</Tag>;
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 140,
+      fixed: "right" as const,
+      render: (text: string, record: AdminRefundRequestData) => (
+        <Space size="small">
+          {record.status === "DUE" && (
             <>
-              <Table className="border mt-2">
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="whitespace-nowrap text-center border px-2">
-                      CPIN
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center w-36 border px-2">
-                      Created On
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border px-2">
-                      Amount
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border px-2">
-                      Mode
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border px-2">
-                      Expire Date
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border  px-2">
-                      Deposit Date
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border  px-2">
-                      Deposit Status
-                    </TableHead>
-                    <TableHead className="whitespace-nowrap text-center border p-2">
-                      Download
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {refundsData.map((val: refunds, index: number) => (
-                    <TableRow key={index}>
-                      <TableCell className="text-center p-2">
-                        <Link
-                          className="text-blue-500"
-                          href={`/dashboard/payments/refunds/${encryptURLData(
-                            val.id.toString(),
-                          )}`}
-                        >
-                          {val.cpin}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.createdAt))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.total_tax_amount}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.paymentmode ?? "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {formateDate(new Date(val.expire_date))}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.transaction_date
-                          ? formateDate(new Date(val.transaction_date))
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-center p-2">
-                        {val.refundsstatus}
-                      </TableCell>
-                      <TableCell className="text-center text-blue-500 border p-2">
-                        <MdiDownload
-                          className="cursor-pointer"
-                          onClick={() =>
-                            generatePDF(
-                              `/dashboard/payments/refunds/${encryptURLData(
-                                val.id.toString(),
-                              )}?sidebar=no`,
-                            )
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              <div className="mt-2"></div>
-              <div className="lg:hidden">
-                <Pagination
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  total={pagination.total}
-                  showTotal={(total: number) => `Total ${total} items`}
-                />
-              </div>
-              <div className="hidden lg:block">
-                <Pagination
-                  showQuickJumper
-                  align="center"
-                  defaultCurrent={1}
-                  onChange={onChangePageCount}
-                  showSizeChanger
-                  pageSizeOptions={[2, 5, 10, 20, 25, 50, 100]}
-                  total={pagination.total}
-                  responsive={true}
-                  showTotal={(total: number, range: number[]) =>
-                    `${range[0]}-${range[1]} of ${total} items`
-                  }
-                />
-              </div>
+              <Button
+                type="primary"
+                size="small"
+                icon={<CheckCircleOutlined />}
+                onClick={() => showApproveModal(record)}
+              />
+              <Button
+                danger
+                size="small"
+                icon={<CloseCircleOutlined />}
+                onClick={() => showRejectModal(record)}
+              />
             </>
           )}
-        </div>
+          {record.status === "APPROVED" && <Tag color="green">Approved</Tag>}
+          {record.status === "REJECTED" && <Tag color="red">Rejected</Tag>}
+        </Space>
+      ),
+    },
+  ];
+
+  if (!refundRequests && loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" />
       </div>
-    </>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-3 mx-auto mt-3">
+      <h1 className="text-lg font-bold mb-3">Wallet Refunds History</h1>
+
+      {/* Compact Search & Filter */}
+      <div className="flex gap-2 mb-4 items-center flex-wrap bg-gray-50 p-2 rounded-lg">
+        <Input
+          placeholder="DVAT / TIN / RR#"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          onPressEnter={handleSearch}
+          size="small"
+          prefix={<SearchOutlined />}
+          style={{ width: "180px" }}
+        />
+
+        <Select
+          placeholder="Request Status"
+          value={statusFilter}
+          onChange={(value) => handleFilterChange("status", value)}
+          size="small"
+          allowClear
+          style={{ width: "130px" }}
+          options={[
+            { label: "Due", value: "DUE" },
+            { label: "Approved", value: "APPROVED" },
+            { label: "Rejected", value: "REJECTED" },
+          ]}
+        />
+
+        <Button
+          type="primary"
+          size="small"
+          onClick={handleSearch}
+          loading={loading}
+        >
+          Search
+        </Button>
+
+        <Button size="small" onClick={handleClear} icon={<DeleteOutlined />}>
+          Clear
+        </Button>
+
+        <span className="text-xs text-gray-600 ml-auto">
+          Total:{" "}
+          <span className="font-semibold text-blue-600">
+            {pagination.total}
+          </span>
+        </span>
+      </div>
+
+      {/* Empty State */}
+      {!loading && refundRequests.length === 0 ? (
+        <div className="bg-gray-50 rounded-lg p-8 text-center border border-dashed border-gray-300">
+          <p className="text-gray-600 mb-3">No records found</p>
+          {(searchText || statusFilter) && (
+            <Button size="small" onClick={handleClear} type="primary" ghost>
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={refundRequests.map((req) => ({ ...req, key: req.id }))}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            onChange: (page) => loadData(page),
+            onShowSizeChange: (current, pageSize) => {
+              setPagination((prev) => ({ ...prev, pageSize, current: 1 }));
+              loadData(1);
+            },
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "15", "20", "30"],
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+            size: "small",
+          }}
+          scroll={{ x: 1200 }}
+          size="small"
+        />
+      )}
+
+      {/* Modal */}
+      <Modal
+        title={modalMode === "approve" ? "Approve Refund" : "Reject Refund"}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        width={450}
+        footer={[
+          <Button
+            key="cancel"
+            size="small"
+            onClick={() => setModalVisible(false)}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="action"
+            type={modalMode === "approve" ? "primary" : "primary"}
+            danger={modalMode === "reject"}
+            loading={loading}
+            size="small"
+            onClick={modalMode === "approve" ? handleApprove : handleReject}
+          >
+            {modalMode === "approve" ? "Approve" : "Reject"}
+          </Button>,
+        ]}
+      >
+        {selectedRefund && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-gray-500">DVAT Name</p>
+                <p className="font-semibold">{selectedRefund.dvat_name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">TIN</p>
+                <p className="font-semibold">{selectedRefund.dvat_tin}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Return Period</p>
+                <p className="font-semibold">
+                  {selectedRefund.return_month ||
+                    `Q${selectedRefund.return_quarter}`}{" "}
+                  {selectedRefund.return_year}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Amount (₹)</p>
+                <p className="font-semibold">
+                  ₹
+                  {(
+                    parseFloat(selectedRefund.itc_amount || "0") +
+                    parseFloat(selectedRefund.cash_amount || "0")
+                  ).toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <Divider style={{ margin: "8px 0" }} />
+
+            <div>
+              <label className="block text-xs font-semibold mb-1">
+                Remark <span className="text-red-600">*</span>
+              </label>
+              <Input.TextArea
+                rows={3}
+                size="small"
+                placeholder="Enter remark"
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
   );
 };
 
-export default RefundsHistory;
+export default RefundsHistoryPage;

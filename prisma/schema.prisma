@@ -2164,21 +2164,21 @@ enum WalletStatus {
 }
 
 model wallet_refund {
-  id                      Int                   @id @default(autoincrement())
+  id                      Int                    @id @default(autoincrement())
   dvatId                  Int
-  dvat                    dvat04                @relation(fields: [dvatId], references: [id])
-  liquor_wallet_historyId Int
-  liquor_wallet_history   liquor_wallet_history @relation(fields: [liquor_wallet_historyId], references: [id])
+  dvat                    dvat04                 @relation(fields: [dvatId], references: [id])
+  liquor_wallet_historyId Int?
+  liquor_wallet_history   liquor_wallet_history? @relation(fields: [liquor_wallet_historyId], references: [id])
   returnId                Int
-  returns_01              returns_01            @relation(fields: [returnId], references: [id])
+  returns_01              returns_01             @relation(fields: [returnId], references: [id])
   itc_amount              String
   cash_amount             String
-  remark                  String?               @db.LongText
+  remark                  String?                @db.LongText
   status                  WalletStatus
   acceptedbyId            Int?
-  acceptedby              user?                 @relation(fields: [acceptedbyId], references: [id])
-  created_at              DateTime              @default(now())
-  updated_at              DateTime              @updatedAt
+  acceptedby              user?                  @relation(fields: [acceptedbyId], references: [id])
+  created_at              DateTime               @default(now())
+  updated_at              DateTime               @updatedAt
   deleted_at              DateTime?
 }
 

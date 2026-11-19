@@ -1,12 +1,12 @@
 "use server";
 
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import prisma from "@/../prisma/database";
 import { ApiResponseType } from "@/models/response";
 
 export interface WalletRefundData {
   id: number;
-  liquor_wallet_historyId: number;
+  liquor_wallet_historyId: number | null;
   returnId: number;
   itc_amount: string;
   cash_amount: string;
@@ -16,18 +16,26 @@ export interface WalletRefundData {
   amount: string;
   return_month: string | null;
   return_quarter: string | null;
+  return_year: string | null;
+  return_status: string;
+  rr_number: string;
+  filing_datetime: Date | null;
+  total_tax_amount: string | null;
+  dvat_name: string | null;
+  dvat_tin: string | null;
   created_at: Date;
 }
 
-const GetWalletRefundReturns = async (payload: {
-  dvatId: number;
-}): Promise<ApiResponseType<WalletRefundData[]>> => {
+const GetWalletRefundReturns = async (): Promise<
+  ApiResponseType<WalletRefundData[]>
+> => {
   const functionname = "GetWalletRefundReturns";
 
   try {
     const currentUserId = await getCurrentUserId();
+    const dvatId = await getCurrentDvatId();
 
-    if (!currentUserId) {
+    if (!currentUserId || !dvatId) {
       return {
         status: false,
         data: null,
@@ -39,12 +47,16 @@ const GetWalletRefundReturns = async (payload: {
     // Get all wallet refund requests with related data
     const walletRefunds = await prisma.wallet_refund.findMany({
       where: {
-        dvatId: payload.dvatId,
+        dvatId: dvatId,
         deleted_at: null,
       },
       include: {
         liquor_wallet_history: true,
-        returns_01: true,
+        returns_01: {
+          include: {
+            dvat04: true,
+          },
+        },
       },
       orderBy: {
         created_at: "desc",
@@ -62,7 +74,14 @@ const GetWalletRefundReturns = async (payload: {
       invoice_number: refund.liquor_wallet_history?.invoice_number || "N/A",
       amount: refund.liquor_wallet_history?.amount || "0",
       return_month: refund.returns_01?.month || null,
-      return_quarter: refund.returns_01?.quarter || null,
+      return_quarter: (refund.returns_01?.quarter as string) || null,
+      return_year: refund.returns_01?.year || null,
+      return_status: refund.returns_01?.status || "N/A",
+      rr_number: refund.returns_01?.rr_number || "N/A",
+      filing_datetime: refund.returns_01?.filing_datetime || null,
+      total_tax_amount: refund.returns_01?.total_tax_amount || null,
+      dvat_name: refund.returns_01?.dvat04?.name || "N/A",
+      dvat_tin: refund.returns_01?.dvat04?.tinNumber || "N/A",
       created_at: refund.created_at,
     }));
 

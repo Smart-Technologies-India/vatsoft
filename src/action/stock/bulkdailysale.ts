@@ -220,10 +220,12 @@ const BulkDailySale = async (
                 is_local:
                   purchaser_response.tin_number.startsWith("25") ||
                   purchaser_response.tin_number.startsWith("26"),
-                is_accept: !(
-                  purchaser_response.tin_number.startsWith("25") ||
-                  purchaser_response.tin_number.startsWith("26")
-                ),
+                is_accept: [1, 2, 821].includes(purchaser_response.id)
+                  ? true
+                  : !(
+                      purchaser_response.tin_number.startsWith("25") ||
+                      purchaser_response.tin_number.startsWith("26")
+                    ),
               },
             });
 

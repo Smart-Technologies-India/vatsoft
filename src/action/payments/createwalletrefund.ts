@@ -2,18 +2,30 @@
 
 import { getCurrentDvatId, getCurrentUserId } from "@/lib/auth";
 import prisma from "@/../prisma/database";
-import { ApiResponseType, createResponse } from "@/models/response";
+import { ApiResponseType } from "@/models/response";
 
-export interface CreateWalletRefundPayload {
-  dvatId: number;
-  itc_amount: string;
-  cash_amount: string;
-  remark?: string;
+export interface WalletRefundResponse {
+  walletRefund: {
+    id: number;
+    status: string;
+    created_at: Date;
+  };
+  returnDetails: {
+    id: number;
+    rr_number: string;
+    month: string | null;
+    quarter: string;
+    year: string;
+    status: string;
+    vatamount: string | null;
+    pending_payment: string | null;
+    cash_payment: string | null;
+  };
 }
 
-const CreateWalletRefund = async (
-  payload: CreateWalletRefundPayload
-): Promise<ApiResponseType<any>> => {
+const CreateWalletRefund = async (): Promise<
+  ApiResponseType<WalletRefundResponse>
+> => {
   const functionname = "CreateWalletRefund";
 
   try {
@@ -31,7 +43,7 @@ const CreateWalletRefund = async (
 
     // Get DVAT details
     const dvat = await prisma.dvat04.findUnique({
-      where: { id: payload.dvatId, deletedAt: null },
+      where: { id: dvatId, deletedAt: null },
     });
 
     if (!dvat) {
@@ -50,7 +62,7 @@ const CreateWalletRefund = async (
       // Check for October 2026 filed return
       filedReturn = await prisma.returns_01.findFirst({
         where: {
-          dvat04Id: payload.dvatId,
+          dvat04Id: dvatId,
           month: "OCTOBER",
           year: "2026",
           file_status: "ACTIVE",
@@ -72,7 +84,7 @@ const CreateWalletRefund = async (
       // Check for September 2026 filed return
       filedReturn = await prisma.returns_01.findFirst({
         where: {
-          dvat04Id: payload.dvatId,
+          dvat04Id: dvatId,
           month: "SEPTEMBER",
           year: "2026",
           file_status: "ACTIVE",
@@ -92,28 +104,6 @@ const CreateWalletRefund = async (
       }
     }
 
-    // Get the most recent liquor wallet history entry for CREDIT type
-    const walletHistory = await prisma.liquor_wallet_history.findFirst({
-      where: {
-        dvatId: payload.dvatId,
-        type: "CREDIT",
-        status: "ACTIVE",
-        deletedAt: null,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    if (!walletHistory) {
-      return {
-        status: false,
-        data: null,
-        message: "No wallet credit history found",
-        functionname,
-      } as any;
-    }
-
     // Create wallet refund entry
     if (!filedReturn) {
       return {
@@ -126,19 +116,37 @@ const CreateWalletRefund = async (
 
     const walletRefund = await prisma.wallet_refund.create({
       data: {
-        dvatId: payload.dvatId,
-        liquor_wallet_historyId: walletHistory.id,
+        dvatId: dvatId,
         returnId: filedReturn.id,
-        itc_amount: payload.itc_amount,
-        cash_amount: payload.cash_amount,
-        remark: payload.remark || "",
+        itc_amount: filedReturn.pending_payment ?? "0",
+        cash_amount: filedReturn.cash_payment ?? "0",
         status: "DUE",
       },
     });
 
+    // Format response with all details
+    const responseData: WalletRefundResponse = {
+      walletRefund: {
+        id: walletRefund.id,
+        status: walletRefund.status,
+        created_at: walletRefund.created_at,
+      },
+      returnDetails: {
+        id: filedReturn.id,
+        rr_number: filedReturn.rr_number,
+        month: filedReturn.month,
+        quarter: filedReturn.quarter,
+        year: filedReturn.year,
+        status: filedReturn.status,
+        vatamount: filedReturn.vatamount,
+        pending_payment: filedReturn.pending_payment,
+        cash_payment: filedReturn.cash_payment,
+      },
+    };
+
     return {
       status: true,
-      data: walletRefund,
+      data: responseData,
       message: "Refund request created successfully",
       functionname,
     } as any;

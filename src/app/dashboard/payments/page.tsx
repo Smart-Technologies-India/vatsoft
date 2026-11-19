@@ -65,11 +65,11 @@ const Page = () => {
                 description="Payment of pending interest and penalty."
                 link="/dashboard/payments/department-saved-challan"
               />
-              <DashboardCards
+              {/* <DashboardCards
                 title="Refunds History"
                 description="View the history of all your VAT retunds and their statuses."
                 link="/dashboard/payments/department-refunds-history"
-              />
+              /> */}
               <DashboardCards
                 title="Challan History"
                 description="View the history of all your VAT payment challans and their statuses."
@@ -82,6 +82,15 @@ const Page = () => {
               />
             </>
           )}
+          {["SYSTEM", "ADMIN"].includes(user?.role!) && (
+            <>
+              <DashboardCards
+                title="Refunds History"
+                description="Payment of pending interest and penalty."
+                link="/dashboard/payments/department-refunds-history"
+              />
+            </>
+          )}
 
           {["USER"].includes(user?.role!) && (
             <>
@@ -91,9 +100,9 @@ const Page = () => {
                 link="/dashboard/payments/saved-challan"
               /> */}
               <DashboardCards
-                title="Challan History"
-                description="View the history of all your VAT payment challans and their statuses."
-                link="/dashboard/payments/challan-history"
+                title="Refunds Return"
+                description="View the history of all your VAT refund returns and their statuses."
+                link="/dashboard/payments/admin-refunds-return"
               />
 
               {/* <DashboardCards
@@ -112,11 +121,11 @@ const Page = () => {
                 description="Apply for and monitor the status of your VAT refund claims."
                 link="/dashboard/payments/refunds"
               /> */}
-              <DashboardCards
+              {/* <DashboardCards
                 title="Refunds History"
                 description="View the history of all your VAT refunds and their statuses."
                 link="/dashboard/payments/refunds-history"
-              />
+              /> */}
               {commodity == "FUEL" && (
                 <DashboardCards
                   title="Wallet History"

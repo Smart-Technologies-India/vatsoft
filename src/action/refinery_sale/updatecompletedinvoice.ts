@@ -50,6 +50,9 @@ const UpdateCompletedInvoice = async (
         status: "ACTIVE",
         refinery_status: "COMPLETED",
       },
+      include: {
+        refinery: true,
+      },
     });
 
     if (!targetSale) {
@@ -179,34 +182,27 @@ const UpdateCompletedInvoice = async (
         const rowVatAmount = Number((rowCstTotal - rowAmount).toFixed(2));
         const rowAmountUnit = Number((rowCstTotal / rowQuantity).toFixed(2));
 
-        // Update related daily_purchase if exists
-        const relatedDailyPurchase = await tx.daily_purchase.findFirst({
+        // Update related daily_purchase records for this specific sale
+        // Find daily_purchase records that match this sale's commodity
+        await tx.daily_purchase.updateMany({
           where: {
             invoice_number: targetSale.invoice_number,
-            dvat04Id: targetSale.seller_tin_numberId,
-            seller_tin_numberId: targetSale.seller_tin_numberId,
+            seller_tin_numberId: targetSale.refinery.tin_master_id,
+            commodity_masterId: sale.commodity_masterId,
             deletedAt: null,
             deletedById: null,
             status: "ACTIVE",
           },
+          data: {
+            invoice_number: payload.invoice_number,
+            invoice_date: parsedInvoiceDate,
+            amount: rowAmount.toFixed(2),
+            vatamount: rowVatAmount.toFixed(2),
+            amount_unit: rowAmountUnit.toFixed(2),
+            updatedById: currentUserId,
+            updatedAt: new Date(),
+          },
         });
-
-        if (relatedDailyPurchase) {
-          await tx.daily_purchase.update({
-            where: {
-              id: relatedDailyPurchase.id,
-            },
-            data: {
-              invoice_number: payload.invoice_number,
-              invoice_date: parsedInvoiceDate,
-              amount: rowAmount.toFixed(2),
-              vatamount: rowVatAmount.toFixed(2),
-              amount_unit: rowAmountUnit.toFixed(2),
-              updatedById: currentUserId,
-              updatedAt: new Date(),
-            },
-          });
-        }
 
         // Create change log entry
         await tx.refinery_sale_change_log.create({
@@ -240,7 +236,6 @@ const UpdateCompletedInvoice = async (
       functionname,
     };
   } catch (error) {
-    console.error(`[${functionname}]`, error);
     return createResponse({
       message: errorToString(error),
       functionname,
