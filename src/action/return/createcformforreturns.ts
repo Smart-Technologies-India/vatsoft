@@ -272,6 +272,28 @@ const CreateCFormForReturns = async (): Promise<
             returns_entryId: entry.id,
           },
         });
+
+        const existingCFormReturns = await prisma.cform_returns.findMany({
+          where: {
+            cformId,
+            returns_entryId: entry.id,
+          },
+        });
+
+        const totalamount = existingCFormReturns.reduce(
+          (sum, cformReturn) =>
+            sum + parseFloat(entry.total_invoice_number || "0"),
+          0,
+        );
+
+        await prisma.cform.update({
+          where: {
+            id: cformId,
+          },
+          data: {
+            amount: totalamount.toFixed(2),
+          },
+        });
       }
     }
 

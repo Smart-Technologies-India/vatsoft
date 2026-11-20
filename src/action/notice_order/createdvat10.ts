@@ -111,7 +111,6 @@ const CreateDvat10 = async (
         // const log = await fetch(
         //   `http://sms.smartechwebworks.com/submitsms.jsp?user=dddnhvat&key=781358d943XX&mobile=+919773356997&message=${smsMessage}&senderid=VATDDD&accusage=1&entityid=1701174159851422588&tempid=1707174989483820875`,
         // );
-        // console.log("SMS log:", log);
       }
     } catch (smsError) {
       console.log("SMS send failed:", smsError);

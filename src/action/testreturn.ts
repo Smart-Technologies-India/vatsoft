@@ -124,43 +124,45 @@ const TestReturn = async (
           const processedData = await calculateReturnMetrics(
             prisma,
             updateresponse,
-            updateresponse.dvat04.frequencyFilings === "QUARTERLY"
+            updateresponse.dvat04.frequencyFilings === "QUARTERLY",
           );
 
           // Only do lightweight DB writes in transaction
           await prisma.$transaction(
             async (txPrisma) => {
-              await writeProcessedReturnData(txPrisma, updateresponse, processedData);
+              await writeProcessedReturnData(
+                txPrisma,
+                updateresponse,
+                processedData,
+              );
             },
             {
               maxWait: 30000,
               timeout: 15000, // Reduced timeout since transaction is now lightweight
-            }
+            },
           );
 
           totalProcessed++;
           processedResult = updateresponse;
         } catch (itemError) {
           totalFailed++;
-          const errorMessage = itemError instanceof Error ? itemError.message : String(itemError);
+          const errorMessage =
+            itemError instanceof Error ? itemError.message : String(itemError);
           failedRecords.push({
             id: returnItem.id,
             error: errorMessage,
           });
           // Log error but continue processing next record
-          console.error(`Failed to process return ID ${returnItem.id}: ${errorMessage}`);
+          console.error(
+            `Failed to process return ID ${returnItem.id}: ${errorMessage}`,
+          );
         }
       }
-
-      // Log progress for large datasets
-      console.log(
-        `Processed batch: ${totalProcessed + totalFailed}/${totalCount} returns ` +
-        `(Success: ${totalProcessed}, Failed: ${totalFailed})`
-      );
     }
 
     // Build response message with detailed statistics
-    const successRate = totalCount > 0 ? Math.round((totalProcessed / totalCount) * 100) : 0;
+    const successRate =
+      totalCount > 0 ? Math.round((totalProcessed / totalCount) * 100) : 0;
     let responseMessage = `Processing completed. Processed ${totalProcessed}/${totalCount} returns successfully (${successRate}% success rate).`;
 
     if (totalFailed > 0) {
@@ -287,7 +289,7 @@ async function calculateReturnMetrics(
       // Log warning but don't fail - use null for missing previous month
       console.warn(
         `Warning: No return found for the previous month: ${month} ${year} ` +
-        `(Return ID: ${updateresponse.id}). Will use zero values for calculations.`
+          `(Return ID: ${updateresponse.id}). Will use zero values for calculations.`,
       );
       // Don't throw error - allow processing to continue with default values
       // lastmonthreturn remains null and calculations will use 0 as default
@@ -587,11 +589,7 @@ async function writeProcessedReturnData(
   }
 
   // Handle interest updates (can be done after transaction or in a separate transaction)
-  await updateInterestWorking(
-    txPrisma,
-    updateresponse,
-    netTaxCalc,
-  );
+  await updateInterestWorking(txPrisma, updateresponse, netTaxCalc);
 }
 
 // Update interest working records

@@ -278,7 +278,10 @@ const RefundsReturnPage = () => {
       </div>
 
       {/* Create New Request Button */}
-      {filedReturn && filedReturn.status === "PAID" && refundRequests.length === 0 && (
+      {filedReturn && filedReturn.status === "PAID" && (
+        refundRequests.length === 0 || 
+        refundRequests.some((req) => req.status === "REJECTED")
+      ) && (
         <Button
           type="primary"
           size="large"

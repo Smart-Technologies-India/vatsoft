@@ -102,7 +102,6 @@ const AssessmentPage = () => {
   const dvat04id = parseInt(
     decryptURLData(Array.isArray(id) ? id[0] : id, router),
   );
-  console.log(dvat04id);
 
   const [isLoading, setIsLoading] = useState(true);
   const [dvatData, setDvatData] = useState<dvat04 | null>(null);

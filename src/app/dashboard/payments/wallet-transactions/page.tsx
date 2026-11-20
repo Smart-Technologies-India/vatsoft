@@ -40,40 +40,101 @@ const WalletTransactionsPage = () => {
     return Number.isFinite(num) ? num.toFixed(2) : "0.00";
   };
 
-  const handleExportToExcel = () => {
-    if (walletTransactionsData.length === 0) {
-      toast.error("No data to export");
-      return;
+  const handleExportToExcel = async () => {
+    setLoading(true);
+    try {
+      let exportData: UserLiquorWalletTransactionWithRelations[] = [];
+
+      if (isSearch) {
+        // If searching by invoice number
+        if (searchOption === SearchOption.INVOICE_NUMBER) {
+          if (
+            invoiceNumberRef.current?.input?.value == undefined ||
+            invoiceNumberRef.current?.input?.value == null ||
+            invoiceNumberRef.current?.input?.value == ""
+          ) {
+            toast.error("Enter invoice number");
+            return;
+          }
+          const search_response = await GetUserLiquorWalletTransactions({
+            dvatid: dvatdata?.id!,
+            invoice_number: invoiceNumberRef.current?.input?.value,
+            take: 10000, // Fetch all records
+            skip: 0,
+          });
+          if (search_response.status && search_response.data?.result) {
+            exportData = search_response.data.result;
+          }
+        } else if (searchOption === SearchOption.DATE) {
+          // If searching by date range
+          if (searchDate == null || searchDate.length <= 1) {
+            toast.error("Select start date and end date");
+            return;
+          }
+          const search_response = await GetUserLiquorWalletTransactions({
+            dvatid: dvatdata?.id!,
+            fromdate: searchDate[0]?.toDate(),
+            todate: searchDate[1]?.toDate(),
+            take: 10000, // Fetch all records
+            skip: 0,
+          });
+          if (search_response.status && search_response.data?.result) {
+            exportData = search_response.data.result;
+          }
+        }
+      } else {
+        // Export all data without filter
+        const history_response = await GetUserLiquorWalletTransactions({
+          dvatid: dvatdata?.id!,
+          take: 10000, // Fetch all records
+          skip: 0,
+        });
+        if (history_response.status && history_response.data?.result) {
+          exportData = history_response.data.result;
+        }
+      }
+
+      if (exportData.length === 0) {
+        toast.error("No data to export");
+        setLoading(false);
+        return;
+      }
+
+      const formattedExportData = exportData.map((record, index) => ({
+        "Sr. No.": index + 1,
+        "Invoice Number": record.invoice_number,
+        "Transaction Type": record.type,
+        Seller: record.seller?.name_of_dealer || "N/A",
+        Amount: `₹ ${formatCurrency(
+          Math.abs(parseFloat(record.old_wallet || "0") - parseFloat(record.new_wallet || "0"))
+        )}`,
+        "Wallet Amount": `₹ ${formatCurrency(parseFloat(record.new_wallet || "0"))}`,
+        Date: formateDate(record.createdAt),
+        Status: record.status,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(formattedExportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Wallet Transactions");
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 8 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 12 },
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      XLSX.writeFile(workbook, `Wallet-Transactions-${new Date().getTime()}.xlsx`);
+      toast.success("Wallet transactions exported successfully");
+    } finally {
+      setLoading(false);
     }
-
-    const exportData = walletTransactionsData.map((record, index) => ({
-      "Sr. No.": pagination.skip + index + 1,
-      "Invoice Number": record.invoice_number,
-      "Transaction Type": record.type,
-      Amount: `₹ ${formatCurrency(
-        Math.abs(parseFloat(record.old_wallet || "0") - parseFloat(record.new_wallet || "0"))
-      )}`,
-      Date: formateDate(record.createdAt),
-      Status: record.status,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Wallet Transactions");
-
-    // Set column widths
-    const columnWidths = [
-      { wch: 8 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 12 },
-    ];
-    worksheet["!cols"] = columnWidths;
-
-    XLSX.writeFile(workbook, `Wallet-Transactions-${new Date().getTime()}.xlsx`);
-    toast.success("Wallet transactions exported successfully");
   };
 
   const [pagination, setPaginatin] = useState<{

@@ -50,7 +50,7 @@ export default function DvatBlacklistPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userOffice, setUserOffice] = useState<string>("");
   const [pagination, setPagination] = useState({
-    take: 10000,
+    take: 10,
     skip: 0,
     total: 0,
   });
@@ -151,7 +151,6 @@ export default function DvatBlacklistPage() {
         frequency: selectedFrequency || undefined,
       });
 
-      console.log("Blacklisted DVAT response:", response);
       if (response.status && response.data?.result) {
         setBlacklistedDvats(response.data.result);
         setBlacklistPagination({
@@ -164,7 +163,6 @@ export default function DvatBlacklistPage() {
       }
     } catch (error) {
       toast.error("Error fetching blacklisted records");
-      console.error(error);
     } finally {
       setIsBlacklistLoading(false);
     }
@@ -268,15 +266,14 @@ export default function DvatBlacklistPage() {
   // Handle search
   useEffect(() => {
     setPagination((prev) => ({ ...prev, skip: 0 }));
+    setDvatOptions([]);
   }, [searchTerm]);
 
   useEffect(() => {
     if (pagination.skip === 0) {
       fetchDvatOptions();
-    } else {
-      setPagination((prev) => ({ ...prev, skip: 0 }));
     }
-  }, [searchTerm]);
+  }, [searchTerm, pagination.skip, fetchDvatOptions]);
 
   // Handle redflag search
   useEffect(() => {
@@ -366,6 +363,48 @@ export default function DvatBlacklistPage() {
     });
   };
 
+  // Handle loading more DVAT options
+  const handleLoadMoreDvats = () => {
+    setPagination((prev) => ({
+      ...prev,
+      skip: prev.skip + prev.take,
+    }));
+  };
+
+  // Fetch more DVAT options when skip changes
+  useEffect(() => {
+    if (pagination.skip > 0) {
+      const fetchMore = async () => {
+        setIsLoading(true);
+        try {
+          const response = await SearchDvatForBlacklist({
+            searchTerm,
+            skip: pagination.skip,
+            take: pagination.take,
+          });
+
+          if (response.status && response.data?.result) {
+            const result = response.data.result;
+            setDvatOptions((prev) => [
+              ...prev,
+              ...result.filter(
+                (item: DvatOption) => !prev.some((p) => p.id === item.id),
+              ),
+            ]);
+          } else {
+            toast.error(response.message || "Failed to load more DVATs");
+          }
+        } catch (error) {
+          toast.error("Error loading more DVATs");
+          console.error(error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchMore();
+    }
+  }, [pagination.skip, pagination.take, searchTerm]);
+
   return (
     <div className="p-3 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -402,32 +441,52 @@ export default function DvatBlacklistPage() {
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 Select DVAT
               </label>
-              <Spin spinning={isLoading}>
-                <Select
-                  size="middle"
-                  placeholder="Select a DVAT"
-                  value={selectedDvat}
-                  onChange={setSelectedDvat}
-                  style={{ width: "100%" }}
-                  optionLabelProp="label"
-                  options={dvatOptions
-                    .filter((dvat) => !dvat.isBlacklisted)
-                    .map((dvat) => ({
-                      value: dvat.id,
-                      label: `${dvat.tinNumber} - ${dvat.tradename}`,
-                      children: (
-                        <div>
-                          <div className="font-semibold text-sm">
-                            {dvat.tinNumber} - {dvat.tradename}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {dvat.commodity} | {dvat.selectOffice}
-                          </div>
-                        </div>
-                      ),
-                    }))}
-                />
-              </Spin>
+              <div className="flex gap-2">
+                <Spin spinning={isLoading} className="flex-1">
+                  <div>
+                    <Select
+                      size="middle"
+                      placeholder="Select a DVAT"
+                      value={selectedDvat}
+                      onChange={setSelectedDvat}
+                      style={{ width: "100%" }}
+                      optionLabelProp="label"
+                      options={dvatOptions
+                        .filter((dvat) => !dvat.isBlacklisted)
+                        .map((dvat) => ({
+                          value: dvat.id,
+                          label: `${dvat.tinNumber} - ${dvat.tradename}`,
+                          children: (
+                            <div>
+                              <div className="font-semibold text-sm">
+                                {dvat.tinNumber} - {dvat.tradename}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {dvat.commodity} | {dvat.selectOffice}
+                              </div>
+                            </div>
+                          ),
+                        }))}
+                    />
+                    {pagination.total > 0 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Showing{" "}
+                      {dvatOptions.filter((d) => !d.isBlacklisted).length} of{" "}
+                        {pagination.total} records
+                      </div>
+                    )}
+                  </div>
+                </Spin>
+                {pagination.skip + pagination.take < pagination.total && (
+                  <Button
+                    onClick={handleLoadMoreDvats}
+                    loading={isLoading}
+                    size="middle"
+                  >
+                    Load More
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="md:col-span-3">
