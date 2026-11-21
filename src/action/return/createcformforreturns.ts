@@ -45,9 +45,9 @@ const CreateCFormForReturns = async (): Promise<
           status: "PAID",
         },
         // Entries that don't have a cform_returns record
-        cfrom_returns: {
-          none: {},
-        },
+        // cfrom_returns: {
+        //   none: {},
+        // },
         // Only include DVAT_30_A entries which are eligible for C-Form
         dvat_type: "DVAT_30_A",
         category_of_entry: "INVOICE",
@@ -137,9 +137,9 @@ const CreateCFormForReturns = async (): Promise<
               deletedById: null,
               status: "ACTIVE",
               seller_tin_numberId: sellerId,
-              cfrom_returns: {
-                none: {}, // Must NOT have a cform_returns record
-              },
+              // cfrom_returns: {
+              //   none: {}, // Must NOT have a cform_returns record
+              // },
               returns_01: {
                 dvat04Id: currentDvatId,
                 deletedAt: null,
@@ -205,9 +205,12 @@ const CreateCFormForReturns = async (): Promise<
       let cformId: number;
 
       if (existingCForm) {
+        console.log("month", returns01.month, "year", returns01.year);
         cformId = existingCForm.id;
         result.skipped += entries.length;
       } else {
+        console.log("month", returns01.month, "year", returns01.year);
+
         // Create new C-Form for the quarter
 
         const now = new Date();

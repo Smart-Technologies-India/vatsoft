@@ -4,6 +4,7 @@ import GetTransportPermitFiltered, {
   type TransportPermitSortOrder,
   type TransportPermitRecord,
 } from "@/action/stock/gettransportpermitfiltered";
+import GetTransportPermitSummary from "@/action/stock/gettransportpermitsummary";
 import GetTransportPermitDetails, {
   type GroupedPurchaseItem,
 } from "@/action/stock/gettransportpermitdetails";
@@ -180,6 +181,7 @@ const TransportPermit = () => {
 
   const loadData = async () => {
     try {
+      // Fetch paginated data
       const response = await GetTransportPermitFiltered({
         skip: 0,
         take: pagination.take,
@@ -198,8 +200,18 @@ const TransportPermit = () => {
           take: response.data.take,
           total: response.data.total,
         });
-        const summaryData = response.data.summary as any;
-        setSummary(summaryData?.overallSummary ?? DEFAULT_SUMMARY);
+      }
+
+      // Fetch overall summary (all filtered records, not just current page)
+      const summaryResponse = await GetTransportPermitSummary({
+        startDate: dateFilter.startDate,
+        endDate: dateFilter.endDate,
+        statusFilter,
+        officeFilter,
+        searchTerm,
+      });
+      if (summaryResponse.status && summaryResponse.data) {
+        setSummary(summaryResponse.data);
       }
     } catch (error) {
       toast.error("Failed to load data");
@@ -246,8 +258,18 @@ const TransportPermit = () => {
         take: response.data.take,
         total: response.data.total,
       });
-      const summaryData = response.data.summary as any;
-      setSummary(summaryData?.overallSummary ?? DEFAULT_SUMMARY);
+    }
+
+    // Fetch overall summary (all filtered records, not just current page)
+    const summaryResponse = await GetTransportPermitSummary({
+      startDate: dateFilter.startDate,
+      endDate: dateFilter.endDate,
+      statusFilter,
+      officeFilter,
+      searchTerm,
+    });
+    if (summaryResponse.status && summaryResponse.data) {
+      setSummary(summaryResponse.data);
     }
   };
 

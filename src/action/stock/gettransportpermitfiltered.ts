@@ -64,7 +64,9 @@ const ZERO_SUMMARY: TransportPermitSummary = {
   paidRecords: 0,
 };
 
-const summarize = (records: TransportPermitRecord[]): TransportPermitSummary => ({
+const summarize = (
+  records: TransportPermitRecord[],
+): TransportPermitSummary => ({
   totalRecords: records.length,
   totalItems: records.reduce((sum, record) => sum + record.items, 0),
   pendingRecords: records.filter((r) => !r.is_paid).length,
@@ -80,7 +82,7 @@ const GetTransportPermitFiltered = async (
     const currentUserId = await getCurrentUserId();
     const currentDvatId = await getCurrentDvatId();
     const currentUser = await getCurrentUser();
-    
+
     if (!currentUserId || !currentDvatId) {
       return {
         status: false,
@@ -109,7 +111,7 @@ const GetTransportPermitFiltered = async (
 
     const searchTerm = (payload.searchTerm ?? "").trim().toLowerCase();
     const statusFilter = payload.statusFilter ?? "all";
-    
+
     // Determine office filter based on user role
     let effectiveOfficeFilter = payload.officeFilter ?? "all";
     if (currentUser && currentUser.role !== "ADMIN") {
@@ -119,11 +121,11 @@ const GetTransportPermitFiltered = async (
     // Apply search term filter
     if (searchTerm !== "") {
       whereCondition.OR = [
-        { invoiceNumber: { contains: searchTerm, mode: "insensitive" } },
-        { sellerDvatTradeName: { contains: searchTerm, mode: "insensitive" } },
-        { sellerDvatTinNumber: { contains: searchTerm, mode: "insensitive" } },
-        { purchaserDvatTradeName: { contains: searchTerm, mode: "insensitive" } },
-        { purchaserDvatTinNumber: { contains: searchTerm, mode: "insensitive" } },
+        { invoiceNumber: { contains: searchTerm } },
+        { sellerDvatTradeName: { contains: searchTerm } },
+        { sellerDvatTinNumber: { contains: searchTerm } },
+        { purchaserDvatTradeName: { contains: searchTerm } },
+        { purchaserDvatTinNumber: { contains: searchTerm } },
       ];
     }
 

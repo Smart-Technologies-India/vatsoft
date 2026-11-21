@@ -290,8 +290,28 @@ const ConvertDvat31 = async (
       const chunkRows = data_to_create.slice(start, start + chunkSize);
 
       await prisma.$transaction(async (tx) => {
-        await tx.returns_entry.createMany({
-          data: chunkRows.map(
+        const urnNumbers = chunkRows
+          .map((val) => val.urn_number)
+          .filter((urn): urn is string => urn !== null);
+
+        // find if return entiry urn_number alredy exists in the database
+        const existingUrnNumbers = await tx.returns_entry.findMany({
+          where: {
+            urn_number: { in: urnNumbers },
+          },
+          select: {
+            urn_number: true,
+          },
+        });
+
+        const existingUrnSet = new Set(
+          existingUrnNumbers.map((e) => e.urn_number),
+        );
+
+        // Create return entries only for rows with new URN numbers
+        const newReturnEntries = chunkRows
+          .filter((row) => !existingUrnSet.has(row.urn_number || ""))
+          .map(
             (
               val: daily_sale & {
                 seller_tin_number: tin_number_master;
@@ -349,8 +369,13 @@ const ConvertDvat31 = async (
                 description_of_goods: val.commodity_master.product_name,
               };
             },
-          ),
-        });
+          );
+
+        if (newReturnEntries.length > 0) {
+          await tx.returns_entry.createMany({
+            data: newReturnEntries,
+          });
+        }
 
         const updateResponse = await tx.daily_sale.updateMany({
           where: {

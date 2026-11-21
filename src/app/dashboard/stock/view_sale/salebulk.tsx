@@ -150,7 +150,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
   const isManufacturerBulkUpload =
     dvatdata?.commodity === "MANUFACTURER" ||
-    dvatdata?.commodity === "WHOLESALER";
+    dvatdata?.commodity === "WHOLESALER" ||
+    dvatdata?.commodity === "OIDC";
 
   useEffect(() => {
     const init = async () => {
@@ -605,7 +606,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           if (response.data?.failedCount && response.data.failedCount > 0) {
             // Show failed entries in modal
-            if (response.data.failedEntries && response.data.failedEntries.length > 0) {
+            if (
+              response.data.failedEntries &&
+              response.data.failedEntries.length > 0
+            ) {
               setFailedEntriesData(response.data.failedEntries);
               setFailedCurrentPage(1);
               setIsFailedEntriesModalOpen(true);
@@ -686,7 +690,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
           if (response.data?.failedCount && response.data.failedCount > 0) {
             // Show failed entries in modal
-            if (response.data.failedEntries && response.data.failedEntries.length > 0) {
+            if (
+              response.data.failedEntries &&
+              response.data.failedEntries.length > 0
+            ) {
               setFailedEntriesData(response.data.failedEntries);
               setFailedCurrentPage(1);
               setIsFailedEntriesModalOpen(true);
@@ -732,11 +739,21 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
     try {
       // Create worksheet data
       const worksheetData = [
-        ["Sr. No.", "Invoice Number", "Invoice Date", "Commodity ID", "Commodity Name", "Quantity", "Error Reason"],
+        [
+          "Sr. No.",
+          "Invoice Number",
+          "Invoice Date",
+          "Commodity ID",
+          "Commodity Name",
+          "Quantity",
+          "Error Reason",
+        ],
         ...failedEntriesData.map((row, index) => [
           index + 1,
           row.invoice_number,
-          row.invoice_date ? new Date(row.invoice_date).toLocaleDateString("en-IN") : "N/A",
+          row.invoice_date
+            ? new Date(row.invoice_date).toLocaleDateString("en-IN")
+            : "N/A",
           row.commodity_id ?? "N/A",
           row.commodity_name ?? "N/A",
           row.quantity ?? "N/A",
@@ -746,11 +763,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "Failed Entries",
-      );
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Failed Entries");
 
       // Set column widths
       worksheet["!cols"] = [
@@ -1381,7 +1394,7 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                   "H_EXPORT",
                   "EXPORT",
                 ]
-              : commodityType === "WHOLESALER"
+              : commodityType === "WHOLESALER" || commodityType === "OIDC"
                 ? ["CFORM"]
                 : commodityType === "FUEL"
                   ? ["CFORM", "FFORM", "EXEMPT", "EXEMPT6_2"]
@@ -1570,9 +1583,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
       // Manufacturer-style uploads, special DVAT IDs, and RESTAURANT commodity should bypass stock validation.
       if (
         dvatdata &&
-        !isManufacturerBulkUpload &&
         !manufacturerBulkUploadDvatIds.has(dvatdata.id) &&
-        dvatdata.commodity !== "RESTAURANT"
+        !["RESTAURANT", "MANUFACTURER", "OIDC", "WHOLESALER"].includes(
+          dvatdata.commodity ?? "",
+        )
       ) {
         const stockMap: { [commodityId: number]: number } = {};
         let skip = 0;
@@ -1616,6 +1630,69 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
             if (row.item_code > 0) {
               const availablePcs = stockMap[row.item_code] ?? 0;
               const totalRequested = uploadQuantityMap[row.item_code] ?? 0;
+
+              if (totalRequested > availablePcs) {
+                if (!row.errorname.includes("* Insufficient stock")) {
+                  row.error = true;
+                  row.errorname = row.errorname
+                    ? row.errorname +
+                      `\n* Insufficient stock (available: ${availablePcs}, required: ${totalRequested})`
+                    : `* Insufficient stock (available: ${availablePcs}, required: ${totalRequested})`;
+                }
+              }
+            }
+          });
+        }
+      } else if (
+        dvatdata &&
+        ["OIDC", "WHOLESALER"].includes(dvatdata.commodity ?? "")
+      ) {
+        const stockMap: { [commodityId: number]: number } = {};
+        let skip = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        // Fetch all stock records by paginating through all pages
+        while (hasMore) {
+          const stockResponse = await GetAllStock({
+            dvatid: dvatdata.id,
+            take: pageSize,
+            skip,
+          });
+
+          if (stockResponse.status && stockResponse.data?.result) {
+            for (const s of stockResponse.data.result) {
+              stockMap[s.commodity_masterId] =
+                (stockMap[s.commodity_masterId] ?? 0) + s.quantity;
+            }
+
+            // Check if there are more pages
+            const totalFetched = skip + stockResponse.data.result.length;
+            hasMore = totalFetched < stockResponse.data.total;
+            skip += pageSize;
+          } else {
+            hasMore = false;
+          }
+        }
+
+        if (Object.keys(stockMap).length > 0) {
+          // Sum quantities per item_code across rows with valid item codes
+          const uploadQuantityMap: { [itemCode: number]: number } = {};
+          for (const row of parsedRows) {
+            if (row.item_code > 0) {
+              uploadQuantityMap[row.item_code] =
+                (uploadQuantityMap[row.item_code] ?? 0) + row.quantity;
+            }
+          }
+
+          parsedRows.forEach((row) => {
+            if (row.item_code > 0) {
+              const availablePcs =
+                (stockMap[row.item_code] ?? 0) /
+                (row.crate_size && row.crate_size > 0 ? row.crate_size : 1);
+              const totalRequested =
+                (uploadQuantityMap[row.item_code] ?? 0) /
+                (row.crate_size && row.crate_size > 0 ? row.crate_size : 1);
 
               if (totalRequested > availablePcs) {
                 if (!row.errorname.includes("* Insufficient stock")) {
@@ -1781,7 +1858,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
 
   const bulkUploadTableColumnCount =
     dvatdata?.commodity === "MANUFACTURER" ||
-    dvatdata?.commodity === "WHOLESALER"
+    dvatdata?.commodity === "WHOLESALER" ||
+    dvatdata?.commodity === "OIDC"
       ? 13
       : dvatdata?.commodity === "RESTAURANT"
         ? 12
@@ -1908,7 +1986,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                 Product Name
               </TableHead>
               {dvatdata?.commodity === "MANUFACTURER" ||
-              dvatdata?.commodity === "WHOLESALER" ? (
+              dvatdata?.commodity === "WHOLESALER" ||
+              dvatdata?.commodity === "OIDC" ? (
                 <>
                   <TableHead className="border text-center">
                     Quantity (Crates)
@@ -1973,7 +2052,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                       {val.commodity_name ?? "-"}
                     </TableCell>
                     {dvatdata?.commodity === "MANUFACTURER" ||
-                    dvatdata?.commodity === "WHOLESALER" ? (
+                    dvatdata?.commodity === "WHOLESALER" ||
+                    dvatdata?.commodity === "OIDC" ? (
                       <>
                         <TableCell className="p-2 border text-center">
                           {val.quantity_in_crates !== null
@@ -2007,7 +2087,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                     </TableCell>
                     <TableCell className="p-2 border text-center">
                       {dvatdata?.commodity === "MANUFACTURER" ||
-                      dvatdata?.commodity === "WHOLESALER"
+                      dvatdata?.commodity === "WHOLESALER" ||
+                      dvatdata?.commodity === "OIDC"
                         ? getSaleRowTypeLabel(val)
                         : getSaleTypeLabel(val.sale_type)}
                     </TableCell>
@@ -2184,8 +2265,10 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
                         {row.invoice_number}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-sm">
-                        {row.invoice_date 
-                          ? new Date(row.invoice_date).toLocaleDateString("en-IN")
+                        {row.invoice_date
+                          ? new Date(row.invoice_date).toLocaleDateString(
+                              "en-IN",
+                            )
                           : "N/A"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-sm">
@@ -2243,7 +2326,8 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         </Button>
 
         {(dvatdata?.commodity === "MANUFACTURER" ||
-          dvatdata?.commodity === "WHOLESALER") && (
+          dvatdata?.commodity === "WHOLESALER" ||
+          dvatdata?.commodity === "OIDC") && (
           <Button
             size="small"
             block

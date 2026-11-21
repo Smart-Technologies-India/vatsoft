@@ -408,15 +408,8 @@ const AfterDeathLinePage = () => {
           ? userrespone.data.selectOffice!
           : userrespone.data.selectOffice!;
 
-        // Load paginated data for table
+        // Load paginated data for table with large take to get filter options
         const payment_data = await NotfiledReturnsReport({
-          dept: filterOffice,
-          take: 10,
-          skip: 0,
-        });
-
-        // Load all data for statistics and filters
-        const all_data = await NotfiledReturnsReport({
           dept: filterOffice,
           take: 10000,
           skip: 0,
@@ -424,16 +417,13 @@ const AfterDeathLinePage = () => {
 
         if (payment_data.status && payment_data.data.result) {
           const sortedData = payment_data.data.result;
-          setDvatData(sortedData);
+          setDvatData(sortedData.slice(0, 10));
+          setAllDvatData(sortedData);
           setPaginatin({
-            skip: payment_data.data.skip,
-            take: payment_data.data.take,
-            total: payment_data.data.total,
+            skip: 0,
+            take: 10,
+            total: sortedData.length,
           });
-        }
-
-        if (all_data.status && all_data.data.result) {
-          setAllDvatData(all_data.data.result);
         }
       }
       setLoading(false);
@@ -459,31 +449,21 @@ const AfterDeathLinePage = () => {
           ? "ALL"
           : selectedOffice;
 
-      // Load paginated data for table
+      // Load paginated data for table with large take to get filter options
       const payment_data = await NotfiledReturnsReport({
-        dept: filterOffice,
-        take: 10,
-        skip: 0,
-      });
-
-      // Load all data for statistics and filters
-      const all_data = await NotfiledReturnsReport({
         dept: filterOffice,
         take: 10000,
         skip: 0,
       });
 
       if (payment_data.status && payment_data.data.result) {
-        setDvatData(payment_data.data.result);
+        setDvatData(payment_data.data.result.slice(0, 10));
+        setAllDvatData(payment_data.data.result);
         setPaginatin({
-          skip: payment_data.data.skip,
-          take: payment_data.data.take,
-          total: payment_data.data.total,
+          skip: 0,
+          take: 10,
+          total: payment_data.data.result.length,
         });
-      }
-
-      if (all_data.status && all_data.data.result) {
-        setAllDvatData(all_data.data.result);
       }
       setLoading(false);
     };
@@ -644,79 +624,6 @@ const AfterDeathLinePage = () => {
       return;
     }
 
-    // Filter data client-side
-    let filteredData = allDvatData;
-
-    if (filterType) {
-      filteredData = filteredData.filter((item) => {
-        if (filterType === "REGULAR") {
-          return !item.dvat04.compositionScheme;
-        } else if (filterType === "COMPOSITION") {
-          return item.dvat04.compositionScheme;
-        }
-        return true;
-      });
-    }
-
-    if (filterCommodity) {
-      filteredData = filteredData.filter(
-        (item) => item.dvat04.commodity === filterCommodity,
-      );
-    }
-
-    if (filterFrequency) {
-      filteredData = filteredData.filter(
-        (item) => item.dvat04.frequencyFilings === filterFrequency,
-      );
-    }
-
-    setDvatData(filteredData.slice(0, 10));
-    setPaginatin({
-      skip: 0,
-      take: 10,
-      total: filteredData.length,
-    });
-  };
-
-  const onChangePageCount = async (page: number, pagesize: number) => {
-    // Handle pagination with active filters
-    if (selectedType || selectedCommodity || selectedFrequency) {
-      // Reapply filters to get correct page data
-      let filteredData = allDvatData;
-
-      if (selectedType) {
-        filteredData = filteredData.filter((item) => {
-          if (selectedType === "REGULAR") {
-            return !item.dvat04.compositionScheme;
-          } else if (selectedType === "COMPOSITION") {
-            return item.dvat04.compositionScheme;
-          }
-          return true;
-        });
-      }
-
-      if (selectedCommodity) {
-        filteredData = filteredData.filter(
-          (item) => item.dvat04.commodity === selectedCommodity,
-        );
-      }
-
-      if (selectedFrequency) {
-        filteredData = filteredData.filter(
-          (item) => item.dvat04.frequencyFilings === selectedFrequency,
-        );
-      }
-
-      const startIndex = pagesize * (page - 1);
-      setDvatData(filteredData.slice(startIndex, startIndex + pagesize));
-      setPaginatin({
-        skip: startIndex,
-        take: pagesize,
-        total: filteredData.length,
-      });
-      return;
-    }
-
     // Set office filter based on role
     const filterOffice =
       user &&
@@ -727,6 +634,60 @@ const AfterDeathLinePage = () => {
         : selectedOffice === "ALL"
           ? "ALL"
           : selectedOffice;
+
+    // Server-side filtering
+    const filter_response = await NotfiledReturnsReport({
+      dept: filterOffice,
+      dealerType: filterType || undefined,
+      commodity: filterCommodity || undefined,
+      frequency: filterFrequency || undefined,
+      take: 10,
+      skip: 0,
+    });
+
+    if (filter_response.status && filter_response.data.result) {
+      setDvatData(filter_response.data.result);
+      setPaginatin({
+        skip: 0,
+        take: 10,
+        total: filter_response.data.total,
+      });
+    }
+  };
+
+  const onChangePageCount = async (page: number, pagesize: number) => {
+    // Set office filter based on role
+    const filterOffice =
+      user &&
+      ["VATOFFICER", "DY_COMMISSIONER", "JOINT_COMMISSIONER"].includes(
+        user.role,
+      )
+        ? user.selectOffice!
+        : selectedOffice === "ALL"
+          ? "ALL"
+          : selectedOffice;
+
+    // Handle pagination with active filters (server-side)
+    if (selectedType || selectedCommodity || selectedFrequency) {
+      const filter_response = await NotfiledReturnsReport({
+        dept: filterOffice,
+        dealerType: selectedType || undefined,
+        commodity: selectedCommodity || undefined,
+        frequency: selectedFrequency || undefined,
+        take: pagesize,
+        skip: pagesize * (page - 1),
+      });
+
+      if (filter_response.status && filter_response.data.result) {
+        setDvatData(filter_response.data.result);
+        setPaginatin({
+          skip: pagesize * (page - 1),
+          take: pagesize,
+          total: filter_response.data.total,
+        });
+      }
+      return;
+    }
 
     if (isSearch) {
       if (searchOption == SearchOption.TIN) {
