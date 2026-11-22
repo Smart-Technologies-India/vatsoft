@@ -29,7 +29,7 @@ const DocumentWiseDetails = () => {
   const router = useRouter();
 
   const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-    {}
+    {},
   );
   const handleOpenChange = (newOpen: boolean, index: number) => {
     setOpenPopovers((prev) => ({
@@ -229,7 +229,6 @@ const DocumentWiseDetails = () => {
 
   const getTaxPerios = (): string => {
     if (dvatdata?.frequencyFilings == "QUARTERLY") {
-
       switch (searchParams.get("month") ?? "") {
         case "June":
           return "April - June";
@@ -254,28 +253,28 @@ const DocumentWiseDetails = () => {
           (val: returns_entry & { seller_tin_number: tin_number_master }) =>
             val.dvat_type == DvatType.DVAT_30 &&
             val.seller_tin_number.tin_number.toString() ==
-              searchParams.get("sellertin")
+              searchParams.get("sellertin"),
         );
       case "30A":
         return (returns_entryData ?? []).filter(
           (val: returns_entry & { seller_tin_number: tin_number_master }) =>
             val.dvat_type == DvatType.DVAT_30_A &&
             val.seller_tin_number.tin_number.toString() ==
-              searchParams.get("sellertin")
+              searchParams.get("sellertin"),
         );
       case "31":
         return (returns_entryData ?? []).filter(
           (val: returns_entry & { seller_tin_number: tin_number_master }) =>
             val.dvat_type == DvatType.DVAT_31 &&
             val.seller_tin_number.tin_number.toString() ==
-              searchParams.get("sellertin")
+              searchParams.get("sellertin"),
         );
       case "31A":
         return (returns_entryData ?? []).filter(
           (val: returns_entry & { seller_tin_number: tin_number_master }) =>
             val.dvat_type == DvatType.DVAT_31_A &&
             val.seller_tin_number.tin_number.toString() ==
-              searchParams.get("sellertin")
+              searchParams.get("sellertin"),
         );
       default:
         return [];
@@ -313,55 +312,44 @@ const DocumentWiseDetails = () => {
     }
     return Object.values(grouped);
   };
-  const [deletebox, setDeleteBox] = useState<boolean>(false);
-  const delete_return_entry = async (id: number) => {
-    const response = await RemoveReturn({
-      id: id,
-    });
-    if (response.data && response.status) {
-      toast.success(response.message);
-    } else {
-      toast.error(response.message);
-    }
-  };
 
   const getUrl = (invoice_no: string): string => {
     const formType = searchParams.get("form");
     switch (formType) {
       case "30":
         return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
-          "form"
+          "form",
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
-          "quarter"
+          "quarter",
         )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
+          "sellertin",
         )}&invoice_no=${invoice_no}`;
 
       case "30A":
         return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
-          "form"
+          "form",
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
-          "quarter"
+          "quarter",
         )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
+          "sellertin",
         )}&invoice_no=${invoice_no}`;
 
       case "31":
         return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
-          "form"
+          "form",
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
-          "quarter"
+          "quarter",
         )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
+          "sellertin",
         )}&invoice_no=${invoice_no}`;
 
       case "31A":
         return `/dashboard/returns/returns-dashboard/invoices/document-wise-details/details?form=${searchParams.get(
-          "form"
+          "form",
         )}&year=${searchParams.get("year")}&quarter=${searchParams.get(
-          "quarter"
+          "quarter",
         )}&month=${searchParams.get("month")}&sellertin=${searchParams.get(
-          "sellertin"
+          "sellertin",
         )}&invoice_no=${invoice_no}`;
 
       default:
@@ -476,7 +464,7 @@ const DocumentWiseDetails = () => {
                       </TableCell> */}
                       {/* )} */}
                     </TableRow>
-                  )
+                  ),
                 )}
               </TableBody>
             </Table>

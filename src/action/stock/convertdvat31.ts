@@ -231,8 +231,10 @@ const ConvertDvat31 = async (
             deletedAt: null,
           },
           data: {
-            deletedAt: new Date(),
+            updatedById: currentUserId,
             deletedById: currentUserId,
+            deletedAt: new Date(),
+            status: "INACTIVE",
           },
         });
       }
@@ -255,8 +257,10 @@ const ConvertDvat31 = async (
             deletedAt: null,
           },
           data: {
-            deletedAt: new Date(),
+            updatedById: currentUserId,
             deletedById: currentUserId,
+            deletedAt: new Date(),
+            status: "INACTIVE",
           },
         });
       }

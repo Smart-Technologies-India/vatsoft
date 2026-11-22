@@ -44,6 +44,7 @@ export async function reverseGroupReturns(
         deletedAt: new Date(),
         deletedById: userId,
         status: "INACTIVE",
+        updatedById: userId,
       },
     });
 

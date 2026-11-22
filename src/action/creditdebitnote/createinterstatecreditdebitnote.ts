@@ -269,8 +269,10 @@ const CreateInterstateCreditDebitNote = async (
         deletedAt: null,
       },
       data: {
-        deletedAt: new Date(),
+        updatedById: currentUserId,
         deletedById: currentUserId,
+        deletedAt: new Date(),
+        status: "INACTIVE",
       },
     });
 

@@ -38,8 +38,10 @@ export async function reverseAllReturns(returns01Id: number) {
         deletedAt: null,
       },
       data: {
-        deletedAt: new Date(),
+        updatedById: userId,
         deletedById: userId,
+        deletedAt: new Date(),
+        status: "INACTIVE",
       },
     });
 

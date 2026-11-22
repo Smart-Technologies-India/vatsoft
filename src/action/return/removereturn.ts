@@ -1,17 +1,17 @@
 "use server";
 import { getCurrentUserId, getCurrentDvatId } from "@/lib/auth";
 
-import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
+import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
-import { returns_01, returns_entry } from "@prisma/client";
+import { returns_entry } from "@prisma/client";
 
 interface RemoveReturnPayload {
   id: number;
 }
 
 const RemoveReturn = async (
-  payload: RemoveReturnPayload
+  payload: RemoveReturnPayload,
 ): Promise<ApiResponseType<returns_entry | null>> => {
   const functionname: string = RemoveReturn.name;
   try {
@@ -46,6 +46,9 @@ const RemoveReturn = async (
         status: "ACTIVE",
       },
       data: {
+        updatedById: currentUserId,
+        deletedById: currentUserId,
+        deletedAt: new Date(),
         status: "INACTIVE",
       },
     });
