@@ -9,9 +9,11 @@ interface DownloadPurchaseSampleProps {
 }
 const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
   const downloadBulkTemplate = async () => {
-    const commodityType = props.commodity;
+    const commodityType = props.commodity as Dvat04Commodity;
     const isManufacturerCommodity =
-      commodityType === "MANUFACTURER" || commodityType == "WHOLESALER" || commodityType == "OIDC";
+      commodityType === "MANUFACTURER" ||
+      commodityType == "WHOLESALER" ||
+      commodityType == "OIDC";
 
     let commodityMasterData: commodity_master[] = [];
     const commodityResponse = await AllCommodityMaster({});
@@ -30,7 +32,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
       }));
 
     const getCommoditySpecificColumns = (rowVariant: 1 | 2 | 3) => {
-      if (commodityType === "MANUFACTURER" || commodityType === "OIDC") {
+      if (commodityType === "MANUFACTURER") {
         if (rowVariant === 1) {
           return {
             "Is Against C Form": "false",
@@ -90,7 +92,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
         };
       }
 
-      if (commodityType === "WHOLESALER") {
+      if (commodityType === "WHOLESALER" || commodityType === "OIDC") {
         return {
           "Is Against C Form": rowVariant === 2 ? "true" : "false",
         };
@@ -100,7 +102,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
     };
 
     const commoditySpecificInstructionRows =
-      commodityType === "MANUFACTURER" || commodityType === "OIDC"
+      commodityType === "MANUFACTURER"
         ? [
             {
               Field: "Is Against C Form",
@@ -166,7 +168,7 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
                   "Preferred true/false. yes/no/1/0 are also accepted. NA or blank is not allowed.",
               },
             ]
-          : commodityType === "WHOLESALER"
+          : commodityType === "WHOLESALER" || commodityType === "OIDC"
             ? [
                 {
                   Field: "Is Against C Form",
@@ -274,11 +276,12 @@ const DownloadPurchaseSample = (props: DownloadPurchaseSampleProps) => {
       {
         Field: "Total Invoice Value",
         "What to fill": "Item-wise amount inclusive of VAT",
-        Rules: commodityType === "WHOLESALER"
-          ? "For rows of the same invoice, keep this value identical. This is invoice-level total and must be greater than 0."
-          : isManufacturerCommodity
-          ? "If multiple items in same invoice, enter value separately for each item row. Tax will be calculated at 0%."
-          : "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
+        Rules:
+          commodityType === "WHOLESALER" || commodityType === "OIDC"
+            ? "For rows of the same invoice, keep this value identical. This is invoice-level total and must be greater than 0."
+            : isManufacturerCommodity
+              ? "If multiple items in same invoice, enter value separately for each item row. Tax will be calculated at 0%."
+              : "If multiple items in same invoice, enter value separately for each item row. Must be inclusive of VAT.",
       },
       ...commoditySpecificInstructionRows,
     ];

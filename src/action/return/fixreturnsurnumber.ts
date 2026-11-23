@@ -45,26 +45,81 @@ const FixReturnsUrnNumber = async (
     const failedBatches: BatchResult[] = [];
 
     // Get all matching records where urn_number doesn't match
-    const matchingRecords = await prisma.$queryRaw<
-      { id: number; urn_number: string; daily_sale_urn: string }[]
-    >`
-      SELECT 
-        re.id,
-        re.urn_number,
-        ds.urn_number as daily_sale_urn
-      FROM returns_entry re
-      INNER JOIN returns_01 r ON r.id = re.returns_01Id
-      INNER JOIN daily_sale ds ON 
-        ds.dvat04Id = r.dvat04Id
-        AND ds.invoice_number = re.invoice_number
-        AND ds.seller_tin_numberId = re.seller_tin_numberId
-        AND ds.quantity = re.quantity
-        AND ds.commodity_masterId = re.commodity_masterId
-      WHERE ds.urn_number != re.urn_number
-      AND ds.invoice_date < "2026-08-01"
-      AND re.urn_number != ''
-      ORDER BY re.id ASC
-    `;
+    // Using Prisma findMany with include to get related data
+    const returnsEntries = await prisma.returns_entry.findMany({
+      where: {
+        urn_number: {
+          not: "",
+        },
+      },
+      include: {
+        returns_01: true,
+      },
+      take: 10000,
+    });
+
+    if (!returnsEntries || returnsEntries.length === 0) {
+      return {
+        status: true,
+        data: {
+          totalProcessed: 0,
+          totalUpdated: 0,
+          batches: [],
+        },
+        message: "No returns entries found.",
+        functionname,
+      } as any;
+    }
+
+    // For each returns_entry, find matching daily_sale and check if urn_number differs
+    const matchingRecords: Array<{
+      id: number;
+      urn_number: string;
+      daily_sale_urn: string;
+    }> = [];
+
+    for (const entry of returnsEntries) {
+      if (!entry.returns_01Id) continue;
+
+      try {
+        const whereCondition: any = {
+          dvat04Id: entry.returns_01.dvat04Id,
+          invoice_number: entry.invoice_number,
+          seller_tin_numberId: entry.seller_tin_numberId,
+        };
+
+        // Only add quantity and commodity_masterId if they're not null
+        if (entry.quantity !== null) {
+          whereCondition.quantity = entry.quantity;
+        }
+        if (entry.commodity_masterId !== null) {
+          whereCondition.commodity_masterId = entry.commodity_masterId;
+        }
+
+        const dailySale = await prisma.daily_sale.findFirst({
+          where: whereCondition,
+          select: {
+            id: true,
+            urn_number: true,
+          },
+        });
+
+        if (
+          dailySale &&
+          dailySale.urn_number &&
+          dailySale.urn_number !== entry.urn_number
+        ) {
+          matchingRecords.push({
+            id: entry.id,
+            urn_number: entry.urn_number || "",
+            daily_sale_urn: dailySale.urn_number,
+          });
+        }
+      } catch (err) {
+        // Continue to next record if search fails
+        continue;
+      }
+    }
 
     const totalCount = matchingRecords.length;
 
@@ -81,7 +136,7 @@ const FixReturnsUrnNumber = async (
       } as any;
     }
 
-    // Process in batches using Prisma updateMany for better performance
+    // Process in batches using Prisma updates
     let batchNumber = 0;
 
     for (let i = 0; i < matchingRecords.length; i += batchSize) {
@@ -89,9 +144,9 @@ const FixReturnsUrnNumber = async (
       const batchRecords = matchingRecords.slice(i, i + batchSize);
 
       try {
-        // Use updateMany with individual updates to handle different urn_numbers per record
         let batchUpdatedCount = 0;
 
+        // Update each record using Prisma update
         for (const record of batchRecords) {
           await prisma.returns_entry.update({
             where: { id: record.id },
@@ -131,6 +186,7 @@ const FixReturnsUrnNumber = async (
       functionname,
     } as any;
   } catch (error: any) {
+    console.error("FixReturnsUrnNumber Error:", error);
     return {
       status: false,
       data: null,

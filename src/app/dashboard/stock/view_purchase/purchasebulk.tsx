@@ -256,15 +256,14 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
   const parseDateDDMMYYYY = (value: unknown): Date | null => {
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
-      // Normalize to local date-only to avoid timezone time components
-      // affecting month comparisons in bulk validation.
-      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      // Extract local date components and create UTC date at midnight
+      return new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
     }
 
     if (typeof value === "number") {
       const parsed = XLSX.SSF.parse_date_code(value);
       if (!parsed) return null;
-      return new Date(parsed.y, parsed.m - 1, parsed.d);
+      return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
     }
 
     const raw = normalizeText(value);
@@ -274,12 +273,13 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     const day = Number(match[1]);
     const month = Number(match[2]);
     const year = Number(match[3]);
-    const parsed = new Date(year, month - 1, day);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
 
+    // Validate the date was created correctly
     if (
-      parsed.getFullYear() !== year ||
-      parsed.getMonth() !== month - 1 ||
-      parsed.getDate() !== day
+      parsed.getUTCFullYear() !== year ||
+      parsed.getUTCMonth() !== month - 1 ||
+      parsed.getUTCDate() !== day
     ) {
       return null;
     }
@@ -288,9 +288,9 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
   };
 
   const formatDateDDMMYYYY = (date: Date): string => {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
 
@@ -329,11 +329,21 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     try {
       // Create worksheet data
       const worksheetData = [
-        ["Sr. No.", "Invoice Number", "Invoice Date", "Commodity ID", "Commodity Name", "Quantity", "Error Reason"],
+        [
+          "Sr. No.",
+          "Invoice Number",
+          "Invoice Date",
+          "Commodity ID",
+          "Commodity Name",
+          "Quantity",
+          "Error Reason",
+        ],
         ...failedEntriesData.map((row, index) => [
           index + 1,
           row.invoice_number,
-          row.invoice_date ? new Date(row.invoice_date).toLocaleDateString("en-IN") : "N/A",
+          row.invoice_date
+            ? new Date(row.invoice_date).toLocaleDateString("en-IN")
+            : "N/A",
           row.commodity_id ?? "N/A",
           row.commodity_name ?? "N/A",
           row.quantity ?? "N/A",
@@ -343,11 +353,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        "Failed Entries",
-      );
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Failed Entries");
 
       // Set column widths
       worksheet["!cols"] = [
@@ -459,7 +465,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
       const isCrateCommodity =
         dvatdata?.commodity === "MANUFACTURER" ||
-        dvatdata?.commodity == "WHOLESALER";
+        dvatdata?.commodity == "WHOLESALER" ||
+        dvatdata?.commodity == "OIDC";
       const commodityType = dvatdata?.commodity;
 
       const parsedRows = rows
@@ -723,6 +730,13 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
             ) {
               errors.push("* Total Invoice Value must be greater than 0");
             }
+          } else if (commodityType === "OIDC") {
+            if (
+              !Number.isFinite(total_invoice_value) ||
+              total_invoice_value <= 0
+            ) {
+              errors.push("* Total Invoice Value must be greater than 0");
+            }
           } else if (
             !Number.isFinite(total_invoice_value) ||
             total_invoice_value <= 0
@@ -833,7 +847,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                     },
                     { label: "Is Exempt", parsed: parsedIsExempt },
                   ]
-                : commodityType === "WHOLESALER"
+                : commodityType === "WHOLESALER" || commodityType === "OIDC"
                   ? [
                       {
                         label: "Is Against C Form",
@@ -885,7 +899,10 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
           if (commodityType === "LIQUOR") {
             purchaseType = "REGULAR";
-          } else if (commodityType === "WHOLESALER") {
+          } else if (
+            commodityType === "WHOLESALER" ||
+            commodityType === "OIDC"
+          ) {
             purchaseType = parsedAgainstCFrom ? "AGAINST_CFORM" : "REGULAR";
           } else if (commodityType === "FUEL") {
             const fuelSelectedFlags = [
@@ -980,12 +997,12 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
         (r) => !Number.isNaN(r.invoice_date.getTime()),
       );
       if (validDates.length > 0) {
-        const firstMonth = validDates[0].invoice_date.getMonth();
-        const firstYear = validDates[0].invoice_date.getFullYear();
+        const firstMonth = validDates[0].invoice_date.getUTCMonth();
+        const firstYear = validDates[0].invoice_date.getUTCFullYear();
         const mixedMonths = validDates.some(
           (r) =>
-            r.invoice_date.getMonth() !== firstMonth ||
-            r.invoice_date.getFullYear() !== firstYear,
+            r.invoice_date.getUTCMonth() !== firstMonth ||
+            r.invoice_date.getUTCFullYear() !== firstYear,
         );
         if (mixedMonths) {
           parsedRows.forEach((r) => {
@@ -1149,7 +1166,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     const entries = tabledata.map((row) => {
       const isCrateCommodity =
         dvatdata?.commodity === "MANUFACTURER" ||
-        dvatdata?.commodity == "WHOLESALER";
+        dvatdata?.commodity == "WHOLESALER" ||
+        dvatdata?.commodity == "OIDC";
       const taxPercent = isCrateCommodity
         ? row.purchase_type === "REGULAR"
           ? "20"
@@ -1199,7 +1217,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
     setIsBulkUploading(true);
     const totalRows = entries.length;
-    
+
     setBulkUploadProgress({
       currentChunk: 1,
       totalChunks: 1,
@@ -1210,27 +1228,27 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
     try {
       let startTime = Date.now();
       let isProcessing = true;
-      
+
       // Start simulated progress updates every 300ms with time-based calculation
       const progressInterval = setInterval(() => {
         if (!isProcessing) {
           clearInterval(progressInterval);
           return;
         }
-        
+
         setBulkUploadProgress((prev) => {
           if (!isProcessing || prev.uploadedRows >= prev.totalRows * 0.95) {
             return prev;
           }
-          
+
           // Calculate progress based on elapsed time and row count
           const elapsedSeconds = (Date.now() - startTime) / 1000;
           const estimatedRowsPerSecond = Math.max(10, prev.totalRows / 15); // Assume ~15 seconds for processing
           const estimatedUploadedRows = Math.min(
             Math.floor(elapsedSeconds * estimatedRowsPerSecond),
-            Math.floor(prev.totalRows * 0.95) // Cap at 95% while processing
+            Math.floor(prev.totalRows * 0.95), // Cap at 95% while processing
           );
-          
+
           return {
             ...prev,
             uploadedRows: Math.max(prev.uploadedRows, estimatedUploadedRows),
@@ -1262,7 +1280,10 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
       if (response.data?.failedCount && response.data.failedCount > 0) {
         // Show failed entries in modal
-        if (response.data.failedEntries && response.data.failedEntries.length > 0) {
+        if (
+          response.data.failedEntries &&
+          response.data.failedEntries.length > 0
+        ) {
           setFailedEntriesData(response.data.failedEntries);
           setIsFailedEntriesModalOpen(true);
           setFailedCurrentPage(1);
@@ -1400,7 +1421,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
 
   const bulkUploadTableColumnCount =
     dvatdata?.commodity === "MANUFACTURER" ||
-    dvatdata?.commodity == "WHOLESALER"
+    dvatdata?.commodity == "WHOLESALER" ||
+    dvatdata?.commodity == "OIDC"
       ? 13
       : 11;
 
@@ -1434,7 +1456,7 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
         {isBulkUploading && bulkUploadProgress.totalRows > 0 && (
           <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm text-blue-800">
             <p className="font-semibold mb-2">
-              {bulkUploadProgress.totalChunks > 1 
+              {bulkUploadProgress.totalChunks > 1
                 ? `Uploading chunk ${bulkUploadProgress.currentChunk} of ${bulkUploadProgress.totalChunks}`
                 : "Processing upload..."}
             </p>
@@ -1443,11 +1465,14 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                 <div
                   className="bg-blue-600 h-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(100, Math.floor(
-                      (bulkUploadProgress.uploadedRows /
-                        bulkUploadProgress.totalRows) *
-                        100,
-                    ))}%`,
+                    width: `${Math.min(
+                      100,
+                      Math.floor(
+                        (bulkUploadProgress.uploadedRows /
+                          bulkUploadProgress.totalRows) *
+                          100,
+                      ),
+                    )}%`,
                   }}
                 ></div>
               </div>
@@ -1461,7 +1486,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
               </span>
             </div>
             <p className="text-xs text-blue-700">
-              Uploaded {bulkUploadProgress.uploadedRows} / {bulkUploadProgress.totalRows} rows
+              Uploaded {bulkUploadProgress.uploadedRows} /{" "}
+              {bulkUploadProgress.totalRows} rows
             </p>
           </div>
         )}
@@ -1535,7 +1561,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                   Item Name
                 </TableHead>
                 {dvatdata?.commodity === "MANUFACTURER" ||
-                dvatdata?.commodity === "WHOLESALER" ? (
+                dvatdata?.commodity === "WHOLESALER" ||
+                dvatdata?.commodity === "OIDC" ? (
                   <>
                     <TableHead className="border border-gray-200 text-center font-semibold text-gray-700 py-3">
                       Quantity (Crates)
@@ -1603,7 +1630,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                         {val.commodity_name ?? "-"}
                       </TableCell>
                       {dvatdata?.commodity === "MANUFACTURER" ||
-                      dvatdata?.commodity === "WHOLESALER" ? (
+                      dvatdata?.commodity === "WHOLESALER" ||
+                      dvatdata?.commodity === "OIDC" ? (
                         <>
                           <TableCell className="p-3 border border-gray-200 text-center text-sm">
                             {val.quantity_in_crates !== null
@@ -1624,7 +1652,8 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                       </TableCell>
                       <TableCell className="p-3 border border-gray-200 text-center text-sm">
                         {dvatdata?.commodity === "MANUFACTURER" ||
-                        dvatdata?.commodity == "WHOLESALER"
+                        dvatdata?.commodity == "WHOLESALER" ||
+                        dvatdata?.commodity == "OIDC"
                           ? getPurchaseRowTypeLabel(val)
                           : getPurchaseTypeLabel(val.purchase_type)}
                       </TableCell>
@@ -1745,8 +1774,10 @@ const PurchaseBulk = (props: PurchaseBulkUploadProps) => {
                         {row.invoice_number}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-sm">
-                        {row.invoice_date 
-                          ? new Date(row.invoice_date).toLocaleDateString("en-IN")
+                        {row.invoice_date
+                          ? new Date(row.invoice_date).toLocaleDateString(
+                              "en-IN",
+                            )
                           : "N/A"}
                       </TableCell>
                       <TableCell className="p-2 border text-center text-sm">

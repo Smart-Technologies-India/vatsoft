@@ -2,15 +2,37 @@
 
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Button, Input, Form, Tabs, Card, Spin, Table, Space, Select, DatePicker, InputNumber, Progress, Statistic, Row, Col } from "antd";
-import GetReturnsData, { type ReturnsData } from "@/action/return/getreturnsdata";
+import {
+  Button,
+  Input,
+  Form,
+  Tabs,
+  Card,
+  Spin,
+  Table,
+  DatePicker,
+  InputNumber,
+  Progress,
+  Statistic,
+  Row,
+  Col,
+} from "antd";
+import GetReturnsData from "@/action/return/getreturnsdata";
 import SearchReturn from "@/action/return/searchreturn";
 import { TestReturn, CreateInterestWorking } from "@/action/testreturn";
 import FixReturnsUrnNumber from "@/action/return/fixreturnsurnumber";
-import dayjs, { Dayjs } from "dayjs";
+import FixReturns from "@/action/fixreturns";
+import { Dayjs } from "dayjs";
 import ServerTime from "@/action/servertime";
 
-type TabName = "getReturnsData" | "interestCalculator" | "searchReturns" | "testReturn" | "createInterestWorking" | "fixReturnsUrnNumber";
+type TabName =
+  | "getReturnsData"
+  | "interestCalculator"
+  | "searchReturns"
+  | "testReturn"
+  | "createInterestWorking"
+  | "fixReturnsUrnNumber"
+  | "fixDuplicateReturns";
 
 const TestReturnPage = () => {
   const [activeTab, setActiveTab] = useState<TabName>("getReturnsData");
@@ -48,6 +70,9 @@ const TestReturnPage = () => {
   // Fix Returns URN Number state
   const [fixUrnBatchSize, setFixUrnBatchSize] = useState<number>(100);
   const [fixUrnProgress, setFixUrnProgress] = useState<number>(0);
+
+  // Fix Duplicate Returns state
+  const [fixDuplicateProgress, setFixDuplicateProgress] = useState<number>(0);
 
   // Get Returns Data handler
   const handleGetReturnsData = async () => {
@@ -92,11 +117,16 @@ const TestReturnPage = () => {
       // Simple interest calculation (can be expanded with complex payment logic)
       const totalDue = parseFloat(interestCalc.totalDue);
       const dueDate = new Date(interestCalc.dueDate.toDate());
-      const asOfDate = interestCalc.asOfDate ? new Date(interestCalc.asOfDate.toDate()) : ServerTime().data as Date;
+      const asOfDate = interestCalc.asOfDate
+        ? new Date(interestCalc.asOfDate.toDate())
+        : (ServerTime().data as Date);
       const annualRate = parseFloat(interestCalc.annualRate) || 15;
 
-      const daysDiff = Math.floor((asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const interest = daysDiff > 0 ? (totalDue * annualRate * daysDiff) / (100 * 365) : 0;
+      const daysDiff = Math.floor(
+        (asOfDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const interest =
+        daysDiff > 0 ? (totalDue * annualRate * daysDiff) / (100 * 365) : 0;
 
       setResult({
         status: true,
@@ -107,7 +137,7 @@ const TestReturnPage = () => {
           daysPassed: Math.max(0, daysDiff),
           annualRate,
           calculatedInterest: Math.max(0, interest),
-          payments: interestCalc.payments.map(p => ({
+          payments: interestCalc.payments.map((p) => ({
             amount: p.amount,
             date: p.date.toISOString(),
           })),
@@ -129,8 +159,12 @@ const TestReturnPage = () => {
       const response = await SearchReturn({
         rr_number: searchParams.rrNumber || undefined,
         userid: searchParams.userId ? parseInt(searchParams.userId) : undefined,
-        fromdate: searchParams.fromDate ? new Date(searchParams.fromDate.toDate()) : undefined,
-        todate: searchParams.toDate ? new Date(searchParams.toDate.toDate()) : undefined,
+        fromdate: searchParams.fromDate
+          ? new Date(searchParams.fromDate.toDate())
+          : undefined,
+        todate: searchParams.toDate
+          ? new Date(searchParams.toDate.toDate())
+          : undefined,
       });
       setResult(response);
 
@@ -213,7 +247,7 @@ const TestReturnPage = () => {
     setLoading(true);
     setFixUrnProgress(0);
     setResult(null);
-    
+
     try {
       // Simulate initial progress
       const progressInterval = setInterval(() => {
@@ -234,7 +268,7 @@ const TestReturnPage = () => {
         const data = response.data;
         setFixUrnProgress(100);
         toast.success(
-          `Successfully fixed ${data?.totalUpdated} out of ${data?.totalProcessed} records in ${data?.batches.length} batches`
+          `Successfully fixed ${data?.totalUpdated} out of ${data?.totalProcessed} records in ${data?.batches.length} batches`,
         );
       } else {
         setFixUrnProgress(0);
@@ -242,6 +276,46 @@ const TestReturnPage = () => {
       }
     } catch (error: any) {
       setFixUrnProgress(0);
+      toast.error("Error: " + error.message);
+      setResult({
+        status: false,
+        data: null,
+        message: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fix Duplicate Returns handler
+  const handleFixDuplicateReturns = async () => {
+    setLoading(true);
+    setFixDuplicateProgress(0);
+    setResult(null);
+
+    try {
+      // Simulate initial progress
+      const progressInterval = setInterval(() => {
+        setFixDuplicateProgress((prev) => {
+          if (prev < 85) return prev + Math.random() * 20;
+          return prev;
+        });
+      }, 300);
+
+      const response = await FixReturns();
+
+      clearInterval(progressInterval);
+      setResult(response);
+
+      if (response.status) {
+        setFixDuplicateProgress(100);
+        toast.success(response.message);
+      } else {
+        setFixDuplicateProgress(0);
+        toast.error(response.message);
+      }
+    } catch (error: any) {
+      setFixDuplicateProgress(0);
       toast.error("Error: " + error.message);
       setResult({
         status: false,
@@ -392,9 +466,11 @@ const TestReturnPage = () => {
           </div>
 
           <div className="bg-gray-50 p-4 rounded">
-            <strong>Due Date:</strong> {new Date(data.dueDate).toLocaleDateString()}
+            <strong>Due Date:</strong>{" "}
+            {new Date(data.dueDate).toLocaleDateString()}
             <br />
-            <strong>As Of Date:</strong> {new Date(data.asOfDate).toLocaleDateString()}
+            <strong>As Of Date:</strong>{" "}
+            {new Date(data.asOfDate).toLocaleDateString()}
           </div>
 
           {data.payments && data.payments.length > 0 && (
@@ -412,7 +488,8 @@ const TestReturnPage = () => {
                     title: "Date",
                     dataIndex: "date",
                     key: "date",
-                    render: (value: string) => new Date(value).toLocaleDateString(),
+                    render: (value: string) =>
+                      new Date(value).toLocaleDateString(),
                   },
                 ]}
                 pagination={false}
@@ -463,7 +540,8 @@ const TestReturnPage = () => {
         title: "Transaction Date",
         dataIndex: "transaction_date",
         key: "transaction_date",
-        render: (value: string | null) => value ? new Date(value).toLocaleDateString() : "N/A",
+        render: (value: string | null) =>
+          value ? new Date(value).toLocaleDateString() : "N/A",
       },
     ];
 
@@ -489,7 +567,8 @@ const TestReturnPage = () => {
             Return Actions & Interest Calculator Test
           </h1>
           <p className="text-gray-600 mt-2">
-            Test GetReturnsData, Interest Calculations, and Return Search functions
+            Test GetReturnsData, Interest Calculations, and Return Search
+            functions
           </p>
         </div>
 
@@ -538,14 +617,22 @@ const TestReturnPage = () => {
                         type="inner"
                         title="Response Status"
                         style={{
-                          backgroundColor: result.status ? "#f6ffed" : "#fff1f0",
+                          backgroundColor: result.status
+                            ? "#f6ffed"
+                            : "#fff1f0",
                           borderColor: result.status ? "#b7eb8f" : "#ffccc7",
                         }}
                       >
                         <div className="space-y-2">
                           <div>
                             <strong>Status:</strong>{" "}
-                            <span className={result.status ? "text-green-600" : "text-red-600"}>
+                            <span
+                              className={
+                                result.status
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
                               {result.status ? "✓ Success" : "✗ Failed"}
                             </span>
                           </div>
@@ -554,7 +641,8 @@ const TestReturnPage = () => {
                           </div>
                           {Array.isArray(result.data) && (
                             <div>
-                              <strong>Records Found:</strong> {result.data.length}
+                              <strong>Records Found:</strong>{" "}
+                              {result.data.length}
                             </div>
                           )}
                         </div>
@@ -585,7 +673,10 @@ const TestReturnPage = () => {
                           type="number"
                           value={interestCalc.totalDue}
                           onChange={(e) =>
-                            setInterestCalc({ ...interestCalc, totalDue: e.target.value })
+                            setInterestCalc({
+                              ...interestCalc,
+                              totalDue: e.target.value,
+                            })
                           }
                         />
                       </Form.Item>
@@ -596,7 +687,10 @@ const TestReturnPage = () => {
                           type="number"
                           value={interestCalc.annualRate}
                           onChange={(e) =>
-                            setInterestCalc({ ...interestCalc, annualRate: e.target.value })
+                            setInterestCalc({
+                              ...interestCalc,
+                              annualRate: e.target.value,
+                            })
                           }
                         />
                       </Form.Item>
@@ -657,7 +751,9 @@ const TestReturnPage = () => {
 
                         {interestCalc.payments.length > 0 && (
                           <div className="mt-4">
-                            <strong>Payments Added: {interestCalc.payments.length}</strong>
+                            <strong>
+                              Payments Added: {interestCalc.payments.length}
+                            </strong>
                             <Table
                               dataSource={interestCalc.payments}
                               columns={[
@@ -665,13 +761,15 @@ const TestReturnPage = () => {
                                   title: "Amount",
                                   dataIndex: "amount",
                                   key: "amount",
-                                  render: (value: number) => `₹${value.toFixed(2)}`,
+                                  render: (value: number) =>
+                                    `₹${value.toFixed(2)}`,
                                 },
                                 {
                                   title: "Date",
                                   dataIndex: "date",
                                   key: "date",
-                                  render: (value: Dayjs) => value.format("DD/MM/YYYY"),
+                                  render: (value: Dayjs) =>
+                                    value.format("DD/MM/YYYY"),
                                 },
                                 {
                                   title: "Action",
@@ -683,9 +781,10 @@ const TestReturnPage = () => {
                                       onClick={() => {
                                         setInterestCalc({
                                           ...interestCalc,
-                                          payments: interestCalc.payments.filter(
-                                            (_, i) => i !== index
-                                          ),
+                                          payments:
+                                            interestCalc.payments.filter(
+                                              (_, i) => i !== index,
+                                            ),
                                         });
                                       }}
                                     >
@@ -745,7 +844,10 @@ const TestReturnPage = () => {
                           placeholder="Enter RR Number"
                           value={searchParams.rrNumber}
                           onChange={(e) =>
-                            setSearchParams({ ...searchParams, rrNumber: e.target.value })
+                            setSearchParams({
+                              ...searchParams,
+                              rrNumber: e.target.value,
+                            })
                           }
                         />
                       </Form.Item>
@@ -756,7 +858,10 @@ const TestReturnPage = () => {
                           type="number"
                           value={searchParams.userId}
                           onChange={(e) =>
-                            setSearchParams({ ...searchParams, userId: e.target.value })
+                            setSearchParams({
+                              ...searchParams,
+                              userId: e.target.value,
+                            })
                           }
                         />
                       </Form.Item>
@@ -805,14 +910,22 @@ const TestReturnPage = () => {
                         type="inner"
                         title="Response Status"
                         style={{
-                          backgroundColor: result.status ? "#f6ffed" : "#fff1f0",
+                          backgroundColor: result.status
+                            ? "#f6ffed"
+                            : "#fff1f0",
                           borderColor: result.status ? "#b7eb8f" : "#ffccc7",
                         }}
                       >
                         <div className="space-y-2">
                           <div>
                             <strong>Status:</strong>{" "}
-                            <span className={result.status ? "text-green-600" : "text-red-600"}>
+                            <span
+                              className={
+                                result.status
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
                               {result.status ? "✓ Success" : "✗ Failed"}
                             </span>
                           </div>
@@ -821,7 +934,8 @@ const TestReturnPage = () => {
                           </div>
                           {Array.isArray(result.data) && (
                             <div>
-                              <strong>Records Found:</strong> {result.data.length}
+                              <strong>Records Found:</strong>{" "}
+                              {result.data.length}
                             </div>
                           )}
                         </div>
@@ -853,7 +967,8 @@ const TestReturnPage = () => {
                         onChange={(e) => setTestReturnId(e.target.value)}
                       />
                       <small className="text-gray-500">
-                        This will mark the return as PAID and create/update returns_01_work and interest_working records
+                        This will mark the return as PAID and create/update
+                        returns_01_work and interest_working records
                       </small>
                     </Form.Item>
 
@@ -881,14 +996,22 @@ const TestReturnPage = () => {
                         type="inner"
                         title="Response Status"
                         style={{
-                          backgroundColor: result.status ? "#f6ffed" : "#fff1f0",
+                          backgroundColor: result.status
+                            ? "#f6ffed"
+                            : "#fff1f0",
                           borderColor: result.status ? "#b7eb8f" : "#ffccc7",
                         }}
                       >
                         <div className="space-y-2">
                           <div>
                             <strong>Status:</strong>{" "}
-                            <span className={result.status ? "text-green-600" : "text-red-600"}>
+                            <span
+                              className={
+                                result.status
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
                               {result.status ? "✓ Success" : "✗ Failed"}
                             </span>
                           </div>
@@ -924,10 +1047,13 @@ const TestReturnPage = () => {
                         placeholder="Enter DVAT04 ID"
                         type="number"
                         value={createInterestDvatId}
-                        onChange={(e) => setCreateInterestDvatId(e.target.value)}
+                        onChange={(e) =>
+                          setCreateInterestDvatId(e.target.value)
+                        }
                       />
                       <small className="text-gray-500">
-                        This will create interest_working records for all PAID challans of this DVAT ID
+                        This will create interest_working records for all PAID
+                        challans of this DVAT ID
                       </small>
                     </Form.Item>
 
@@ -955,14 +1081,22 @@ const TestReturnPage = () => {
                         type="inner"
                         title="Response Status"
                         style={{
-                          backgroundColor: result.status ? "#f6ffed" : "#fff1f0",
+                          backgroundColor: result.status
+                            ? "#f6ffed"
+                            : "#fff1f0",
                           borderColor: result.status ? "#b7eb8f" : "#ffccc7",
                         }}
                       >
                         <div className="space-y-2">
                           <div>
                             <strong>Status:</strong>{" "}
-                            <span className={result.status ? "text-green-600" : "text-red-600"}>
+                            <span
+                              className={
+                                result.status
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }
+                            >
                               {result.status ? "✓ Success" : "✗ Failed"}
                             </span>
                           </div>
@@ -994,10 +1128,14 @@ const TestReturnPage = () => {
                 <Card>
                   <div className="space-y-6">
                     <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
-                      <h3 className="font-bold text-yellow-800 mb-2">⚠️ Fix Returns Entry URN Numbers</h3>
+                      <h3 className="font-bold text-yellow-800 mb-2">
+                        ⚠️ Fix Returns Entry URN Numbers
+                      </h3>
                       <p className="text-yellow-700 text-sm">
-                        This will update returns_entry table to sync URN numbers from daily_sale table where they don&apos;t match.
-                        It processes all matching records in configurable batches to avoid timeouts.
+                        This will update returns_entry table to sync URN numbers
+                        from daily_sale table where they don&apos;t match. It
+                        processes all matching records in configurable batches
+                        to avoid timeouts.
                       </p>
                     </div>
 
@@ -1011,7 +1149,8 @@ const TestReturnPage = () => {
                           placeholder="Enter batch size (default: 100)"
                         />
                         <small className="text-gray-500">
-                          Number of records to process per batch. Higher values process faster but use more resources.
+                          Number of records to process per batch. Higher values
+                          process faster but use more resources.
                         </small>
                       </Form.Item>
 
@@ -1023,17 +1162,27 @@ const TestReturnPage = () => {
                         block
                         danger
                       >
-                        {loading ? "Processing..." : "Start Fixing Returns URN Numbers"}
+                        {loading
+                          ? "Processing..."
+                          : "Start Fixing Returns URN Numbers"}
                       </Button>
                     </Form>
 
                     {loading && (
                       <div className="space-y-4">
-                        <Card type="inner" title="Processing Progress" style={{ borderColor: "#1890ff" }}>
+                        <Card
+                          type="inner"
+                          title="Processing Progress"
+                          style={{ borderColor: "#1890ff" }}
+                        >
                           <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-700 font-medium">Processing batches...</span>
-                              <span className="text-blue-600 font-bold">In Progress</span>
+                              <span className="text-gray-700 font-medium">
+                                Processing batches...
+                              </span>
+                              <span className="text-blue-600 font-bold">
+                                In Progress
+                              </span>
                             </div>
                             <Progress
                               percent={fixUrnProgress}
@@ -1046,7 +1195,9 @@ const TestReturnPage = () => {
                             />
                             <div className="bg-blue-50 p-3 rounded flex items-center gap-2">
                               <Spin size="small" />
-                              <p className="text-blue-700 text-sm">Please wait while batches are being processed...</p>
+                              <p className="text-blue-700 text-sm">
+                                Please wait while batches are being processed...
+                              </p>
                             </div>
                           </div>
                         </Card>
@@ -1059,14 +1210,22 @@ const TestReturnPage = () => {
                           type="inner"
                           title="Response Status"
                           style={{
-                            backgroundColor: result.status ? "#f6ffed" : "#fff1f0",
+                            backgroundColor: result.status
+                              ? "#f6ffed"
+                              : "#fff1f0",
                             borderColor: result.status ? "#b7eb8f" : "#ffccc7",
                           }}
                         >
                           <div className="space-y-4">
                             <div>
                               <strong>Status:</strong>{" "}
-                              <span className={result.status ? "text-green-600" : "text-red-600"}>
+                              <span
+                                className={
+                                  result.status
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }
+                              >
                                 {result.status ? "✓ Success" : "✗ Failed"}
                               </span>
                             </div>
@@ -1102,8 +1261,12 @@ const TestReturnPage = () => {
 
                                 <div className="bg-green-50 p-4 rounded border border-green-200">
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="font-medium text-green-800">Overall Completion</span>
-                                    <span className="text-green-600 font-bold">100%</span>
+                                    <span className="font-medium text-green-800">
+                                      Overall Completion
+                                    </span>
+                                    <span className="text-green-600 font-bold">
+                                      100%
+                                    </span>
                                   </div>
                                   <Progress
                                     percent={100}
@@ -1113,8 +1276,15 @@ const TestReturnPage = () => {
                                   <div className="mt-3 text-sm text-green-700">
                                     <p>✓ Successfully processed all batches</p>
                                     <p className="mt-1">
-                                      Success Rate: {result.data.totalProcessed > 0 ? 
-                                        ((result.data.totalUpdated / result.data.totalProcessed) * 100).toFixed(2) : 0}%
+                                      Success Rate:{" "}
+                                      {result.data.totalProcessed > 0
+                                        ? (
+                                            (result.data.totalUpdated /
+                                              result.data.totalProcessed) *
+                                            100
+                                          ).toFixed(2)
+                                        : 0}
+                                      %
                                     </p>
                                   </div>
                                 </div>
@@ -1123,107 +1293,350 @@ const TestReturnPage = () => {
                           </div>
                         </Card>
 
-                        {result.data?.batches && result.data.batches.length > 0 && (
-                          <Card 
-                            type="inner" 
-                            title={`Batch Progress (${result.data.batches.length} batches completed)`}
-                            style={{ borderColor: "#52c41a" }}
-                          >
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                              {result.data.batches.map((batch: any, index: number) => {
-                                const successRate = batch.processed > 0 ? ((batch.updated / batch.processed) * 100) : 0;
-                                return (
-                                  <div key={batch.batchNumber} className="p-3 bg-gray-50 rounded border border-gray-200">
-                                    <div className="flex justify-between items-center mb-2">
-                                      <span className="font-medium text-gray-700">
-                                        Batch {batch.batchNumber} 
-                                        <span className="ml-2 text-xs text-gray-500">
-                                          ({batch.processed} records)
-                                        </span>
+                        {result.data?.batches &&
+                          result.data.batches.length > 0 && (
+                            <Card
+                              type="inner"
+                              title={`Batch Progress (${result.data.batches.length} batches completed)`}
+                              style={{ borderColor: "#52c41a" }}
+                            >
+                              <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {result.data.batches.map(
+                                  (batch: any, index: number) => {
+                                    const successRate =
+                                      batch.processed > 0
+                                        ? (batch.updated / batch.processed) *
+                                          100
+                                        : 0;
+                                    return (
+                                      <div
+                                        key={batch.batchNumber}
+                                        className="p-3 bg-gray-50 rounded border border-gray-200"
+                                      >
+                                        <div className="flex justify-between items-center mb-2">
+                                          <span className="font-medium text-gray-700">
+                                            Batch {batch.batchNumber}
+                                            <span className="ml-2 text-xs text-gray-500">
+                                              ({batch.processed} records)
+                                            </span>
+                                          </span>
+                                          <span
+                                            className={`text-sm font-bold ${batch.error ? "text-red-600" : "text-green-600"}`}
+                                          >
+                                            {batch.error
+                                              ? "❌ Failed"
+                                              : "✓ Success"}
+                                          </span>
+                                        </div>
+                                        <Progress
+                                          percent={successRate}
+                                          strokeColor={
+                                            batch.error ? "#ff7875" : "#52c41a"
+                                          }
+                                          size="small"
+                                          format={(percent) =>
+                                            `${batch.updated}/${batch.processed}`
+                                          }
+                                        />
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            </Card>
+                          )}
+
+                        {result.data?.batches &&
+                          result.data.batches.length > 0 && (
+                            <Card
+                              type="inner"
+                              title={`Batch Details Table (${result.data.batches.length})`}
+                            >
+                              <Table
+                                dataSource={result.data.batches}
+                                columns={[
+                                  {
+                                    title: "Batch #",
+                                    dataIndex: "batchNumber",
+                                    key: "batchNumber",
+                                    width: 80,
+                                  },
+                                  {
+                                    title: "Processed",
+                                    dataIndex: "processed",
+                                    key: "processed",
+                                    width: 100,
+                                  },
+                                  {
+                                    title: "Updated",
+                                    dataIndex: "updated",
+                                    key: "updated",
+                                    width: 100,
+                                  },
+                                  {
+                                    title: "Status",
+                                    dataIndex: "error",
+                                    key: "status",
+                                    render: (error: string | undefined) => (
+                                      <span
+                                        className={
+                                          error
+                                            ? "text-red-600"
+                                            : "text-green-600"
+                                        }
+                                      >
+                                        {error ? "❌ Failed" : "✓ Success"}
                                       </span>
-                                      <span className={`text-sm font-bold ${batch.error ? "text-red-600" : "text-green-600"}`}>
-                                        {batch.error ? "❌ Failed" : "✓ Success"}
+                                    ),
+                                  },
+                                ]}
+                                pagination={{ pageSize: 10 }}
+                                size="small"
+                                rowKey="batchNumber"
+                              />
+                            </Card>
+                          )}
+
+                        {result.data?.failedBatches &&
+                          result.data.failedBatches.length > 0 && (
+                            <Card
+                              type="inner"
+                              title="Failed Batches"
+                              style={{ borderColor: "#ff7875" }}
+                            >
+                              <Table
+                                dataSource={result.data.failedBatches}
+                                columns={[
+                                  {
+                                    title: "Batch #",
+                                    dataIndex: "batchNumber",
+                                    key: "batchNumber",
+                                  },
+                                  {
+                                    title: "Error",
+                                    dataIndex: "error",
+                                    key: "error",
+                                    render: (error: string) => (
+                                      <span className="text-red-600 text-xs">
+                                        {error}
                                       </span>
-                                    </div>
-                                    <Progress
-                                      percent={successRate}
-                                      strokeColor={batch.error ? "#ff7875" : "#52c41a"}
-                                      size="small"
-                                      format={(percent) => `${batch.updated}/${batch.processed}`}
-                                    />
-                                  </div>
-                                );
-                              })}
+                                    ),
+                                  },
+                                ]}
+                                pagination={{ pageSize: 5 }}
+                                size="small"
+                                rowKey="batchNumber"
+                              />
+                            </Card>
+                          )}
+
+                        <Card type="inner" title="Full JSON Response">
+                          <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96 text-xs">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ),
+            },
+            {
+              key: "fixDuplicateReturns",
+              label: "Fix Duplicate Returns",
+              children: (
+                <Card>
+                  <div className="space-y-6">
+                    <div className="bg-red-50 border border-red-200 p-4 rounded">
+                      <h3 className="font-bold text-red-800 mb-2">
+                        🧹 Clean Duplicate Return Entries
+                      </h3>
+                      <p className="text-red-700 text-sm">
+                        This will find and remove duplicate return entries while keeping the first record. It will extract invoice amounts from deleted records and group them by returns_01Id for later adjustment of return values.
+                      </p>
+                    </div>
+
+                    <Button
+                      type="primary"
+                      danger
+                      onClick={handleFixDuplicateReturns}
+                      loading={loading}
+                      size="large"
+                      block
+                    >
+                      {loading ? "Processing..." : "Start Fixing Duplicate Returns"}
+                    </Button>
+
+                    {loading && (
+                      <div className="space-y-4">
+                        <Card
+                          type="inner"
+                          title="Processing Progress"
+                          style={{ borderColor: "#ff4d4f" }}
+                        >
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-700 font-medium">
+                                Scanning and removing duplicates...
+                              </span>
+                              <span className="text-red-600 font-bold">
+                                In Progress
+                              </span>
                             </div>
-                          </Card>
-                        )}
-
-                        {result.data?.batches && result.data.batches.length > 0 && (
-                          <Card type="inner" title={`Batch Details Table (${result.data.batches.length})`}>
-                            <Table
-                              dataSource={result.data.batches}
-                              columns={[
-                                {
-                                  title: "Batch #",
-                                  dataIndex: "batchNumber",
-                                  key: "batchNumber",
-                                  width: 80,
-                                },
-                                {
-                                  title: "Processed",
-                                  dataIndex: "processed",
-                                  key: "processed",
-                                  width: 100,
-                                },
-                                {
-                                  title: "Updated",
-                                  dataIndex: "updated",
-                                  key: "updated",
-                                  width: 100,
-                                },
-                                {
-                                  title: "Status",
-                                  dataIndex: "error",
-                                  key: "status",
-                                  render: (error: string | undefined) => (
-                                    <span className={error ? "text-red-600" : "text-green-600"}>
-                                      {error ? "❌ Failed" : "✓ Success"}
-                                    </span>
-                                  ),
-                                },
-                              ]}
-                              pagination={{ pageSize: 10 }}
-                              size="small"
-                              rowKey="batchNumber"
+                            <Progress
+                              percent={fixDuplicateProgress}
+                              status="active"
+                              strokeColor={{
+                                "0%": "#ff4d4f",
+                                "100%": "#52c41a",
+                              }}
+                              format={(percent) => `${percent}%`}
                             />
-                          </Card>
-                        )}
+                            <div className="bg-red-50 p-3 rounded flex items-center gap-2">
+                              <Spin size="small" />
+                              <p className="text-red-700 text-sm">
+                                Please wait while duplicates are being processed...
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
 
-                        {result.data?.failedBatches && result.data.failedBatches.length > 0 && (
-                          <Card type="inner" title="Failed Batches" style={{ borderColor: "#ff7875" }}>
-                            <Table
-                              dataSource={result.data.failedBatches}
-                              columns={[
-                                {
-                                  title: "Batch #",
-                                  dataIndex: "batchNumber",
-                                  key: "batchNumber",
-                                },
-                                {
-                                  title: "Error",
-                                  dataIndex: "error",
-                                  key: "error",
-                                  render: (error: string) => (
-                                    <span className="text-red-600 text-xs">{error}</span>
-                                  ),
-                                },
-                              ]}
-                              pagination={{ pageSize: 5 }}
-                              size="small"
-                              rowKey="batchNumber"
-                            />
-                          </Card>
-                        )}
+                    {result && activeTab === "fixDuplicateReturns" && (
+                      <div className="mt-6 space-y-4">
+                        <Card
+                          type="inner"
+                          title="Response Status"
+                          style={{
+                            backgroundColor: result.status
+                              ? "#f6ffed"
+                              : "#fff1f0",
+                            borderColor: result.status ? "#b7eb8f" : "#ffccc7",
+                          }}
+                        >
+                          <div className="space-y-4">
+                            <div>
+                              <strong>Status:</strong>{" "}
+                              <span
+                                className={
+                                  result.status
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }
+                              >
+                                {result.status ? "✓ Success" : "✗ Failed"}
+                              </span>
+                            </div>
+                            <div>
+                              <strong>Message:</strong> {result.message}
+                            </div>
+
+                            {result.data && (
+                              <div className="space-y-4">
+                                <Row gutter={16}>
+                                  <Col xs={12} sm={8}>
+                                    <Statistic
+                                      title="Duplicate Groups"
+                                      value={result.data.total_groups}
+                                      valueStyle={{ color: "#ff4d4f" }}
+                                    />
+                                  </Col>
+                                  <Col xs={12} sm={8}>
+                                    <Statistic
+                                      title="Total Deleted"
+                                      value={result.data.total_deleted}
+                                      valueStyle={{ color: "#fa541c" }}
+                                    />
+                                  </Col>
+                                  <Col xs={12} sm={8}>
+                                    <Statistic
+                                      title="Total Kept"
+                                      value={result.data.total_kept}
+                                      valueStyle={{ color: "#52c41a" }}
+                                    />
+                                  </Col>
+                                </Row>
+
+                                {result.data.deleted_invoices_by_return &&
+                                  result.data.deleted_invoices_by_return
+                                    .length > 0 && (
+                                    <Card
+                                      type="inner"
+                                      title={`Deleted Invoice Amounts by Return (${result.data.deleted_invoices_by_return.length} returns affected)`}
+                                      style={{ borderColor: "#faad14" }}
+                                    >
+                                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                                        {result.data.deleted_invoices_by_return.map(
+                                          (invoiceGroup: any, index: number) => (
+                                            <div
+                                              key={index}
+                                              className="p-4 bg-orange-50 rounded border border-orange-200"
+                                            >
+                                              <div className="flex justify-between items-center mb-3">
+                                                <div>
+                                                  <span className="font-bold text-orange-800">
+                                                    Returns_01 ID:{" "}
+                                                    {invoiceGroup.returns_01Id}
+                                                  </span>
+                                                  <span className="ml-4 text-sm text-orange-700">
+                                                    {invoiceGroup.deleted_count}{" "}
+                                                    duplicate{
+                                                      invoiceGroup.deleted_count >
+                                                      1
+                                                        ? "s"
+                                                        : ""
+                                                    }{" "}
+                                                    deleted
+                                                  </span>
+                                                </div>
+                                              </div>
+                                              <div className="bg-white p-3 rounded border border-orange-100">
+                                                <strong className="text-sm text-gray-600">
+                                                  Deleted Invoice Amounts:
+                                                </strong>
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                  {invoiceGroup.total_invoice_number.map(
+                                                    (
+                                                      amount: number,
+                                                      idx: number,
+                                                    ) => (
+                                                      <span
+                                                        key={idx}
+                                                        className="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded text-sm font-mono"
+                                                      >
+                                                        ₹
+                                                        {amount.toFixed(2)}
+                                                      </span>
+                                                    ),
+                                                  )}
+                                                </div>
+                                                <div className="mt-3 pt-3 border-t border-orange-100">
+                                                  <span className="text-sm text-gray-700">
+                                                    <strong>Total Amount:</strong>{" "}
+                                                    ₹
+                                                    {invoiceGroup.total_invoice_number
+                                                      .reduce(
+                                                        (
+                                                          sum: number,
+                                                          amt: number,
+                                                        ) => sum + amt,
+                                                        0,
+                                                      )
+                                                      .toFixed(2)}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                    </Card>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
 
                         <Card type="inner" title="Full JSON Response">
                           <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96 text-xs">
