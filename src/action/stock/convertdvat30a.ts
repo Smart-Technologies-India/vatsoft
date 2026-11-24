@@ -298,8 +298,32 @@ const ConvertDvat30A = async (
 
       await prisma.$transaction(async (tx) => {
         if (!candidateRows[0].dvat04.compositionScheme) {
-          await tx.returns_entry.createMany({
-            data: chunkRows.map(
+          const urnNumbers = chunkRows
+            .map((val) => val.urn_number)
+            .filter((urn): urn is string => urn !== null);
+
+          // find if return entry urn_number already exists in the database
+          const existingUrnNumbers = await tx.returns_entry.findMany({
+            where: {
+              urn_number: { in: urnNumbers },
+              deletedAt: null,
+              deletedById: null,
+              returns_01Id: returnInvoice.id,
+              dvat_type: DvatType.DVAT_30,
+            },
+            select: {
+              urn_number: true,
+            },
+          });
+
+          const existingUrnSet = new Set(
+            existingUrnNumbers.map((e) => e.urn_number),
+          );
+
+          // Create return entries only for rows with new URN numbers
+          const newReturnEntries = chunkRows
+            .filter((row) => !existingUrnSet.has(row.urn_number || ""))
+            .map(
               (
                 val: daily_purchase & {
                   seller_tin_number: tin_number_master;
@@ -353,8 +377,13 @@ const ConvertDvat30A = async (
                 quantity: val.quantity,
                 description_of_goods: val.commodity_master.product_name,
               }),
-            ),
-          });
+            );
+
+          if (newReturnEntries.length > 0) {
+            await tx.returns_entry.createMany({
+              data: newReturnEntries,
+            });
+          }
         }
 
         const updateResponse = await tx.daily_purchase.updateMany({

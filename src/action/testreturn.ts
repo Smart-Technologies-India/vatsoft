@@ -1,7 +1,7 @@
 "use server";
 
 import { ApiResponseType, createResponse } from "@/models/response";
-import { dvat04, returns_01 } from "@prisma/client";
+import { dvat04, returns_01, returns_01_work } from "@prisma/client";
 import prisma from "../../prisma/database";
 import { errorToString } from "@/utils/methods";
 import {
@@ -271,17 +271,17 @@ async function calculateReturnMetrics(
     (parseInt(year) === 2026 &&
       months.indexOf(month) < months.indexOf("April"));
 
-  let lastmonthreturn: returns_01 | null = null;
+  let lastmonthreturn: returns_01_work | null = null;
 
   if (!isBeforeApril2026) {
-    lastmonthreturn = await prisma.returns_01.findFirst({
+    lastmonthreturn = await prisma.returns_01_work.findFirst({
       where: {
-        year: year,
+        // year: year,
         month: month,
-        dvat04Id: updateresponse.dvat04Id,
-        deletedAt: null,
-        deletedById: null,
-        status: "PAID",
+        dvatId: updateresponse.dvat04Id,
+        // deletedAt: null,
+        // deletedById: null,
+        // status: "PAID",
       },
     });
 
@@ -339,13 +339,13 @@ async function calculateReturnMetrics(
   const r4Turnover = new R4Turnover(
     returnforms,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_cash_next_month ?? "0")
       : 0,
   );
   const r5Turnover = new R5Turnover(
     returnforms,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_itc_next_month ?? "0")
       : 0,
   );
 
@@ -361,10 +361,10 @@ async function calculateReturnMetrics(
     challans,
     returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_itc_next_month ?? "0")
       : 0,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_cash_next_month ?? "0")
       : 0,
     isQuarterlyFiling,
   );
@@ -374,10 +374,10 @@ async function calculateReturnMetrics(
     challans,
     returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_itc_next_month ?? "0")
       : 0,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_cash_next_month ?? "0")
       : 0,
     isQuarterlyFiling,
   );
@@ -387,10 +387,10 @@ async function calculateReturnMetrics(
     challans,
     returnForCalculation,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.pending_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_itc_next_month ?? "0")
       : 0,
     !isBeforeApril2026 && lastmonthreturn
-      ? parseFloat(lastmonthreturn.cash_payment ?? "0")
+      ? parseFloat(lastmonthreturn.excess_cash_next_month ?? "0")
       : 0,
     isQuarterlyFiling,
   );

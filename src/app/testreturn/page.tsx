@@ -20,6 +20,7 @@ import {
 import GetReturnsData from "@/action/return/getreturnsdata";
 import SearchReturn from "@/action/return/searchreturn";
 import { TestReturn, CreateInterestWorking } from "@/action/testreturn";
+import { UpdateReturnByDvat } from "@/action/updatereturnbydvat";
 import FixReturnsUrnNumber from "@/action/return/fixreturnsurnumber";
 import FixReturns from "@/action/fixreturns";
 import { Dayjs } from "dayjs";
@@ -30,6 +31,7 @@ type TabName =
   | "interestCalculator"
   | "searchReturns"
   | "testReturn"
+  | "updateReturnByDvat"
   | "createInterestWorking"
   | "fixReturnsUrnNumber"
   | "fixDuplicateReturns";
@@ -63,6 +65,9 @@ const TestReturnPage = () => {
 
   // Test Return state
   const [testReturnId, setTestReturnId] = useState<string>("");
+
+  // Update Return By DVAT state
+  const [updateReturnDvatId, setUpdateReturnDvatId] = useState<string>("");
 
   // Create Interest Working state
   const [createInterestDvatId, setCreateInterestDvatId] = useState<string>("");
@@ -196,6 +201,37 @@ const TestReturnPage = () => {
 
       if (response.status) {
         toast.success("Test return completed successfully");
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+      setResult({
+        status: false,
+        data: null,
+        message: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update Return By DVAT handler
+  const handleUpdateReturnByDvat = async () => {
+    if (!updateReturnDvatId) {
+      toast.error("Please enter DVAT ID");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await UpdateReturnByDvat({
+        dvatId: parseInt(updateReturnDvatId),
+      });
+      setResult(response);
+
+      if (response.status) {
+        toast.success("Returns updated successfully for DVAT user");
       } else {
         toast.error(response.message);
       }
@@ -1033,6 +1069,100 @@ const TestReturnPage = () => {
                       </Card>
                     </div>
                   )}
+                </Card>
+              ),
+            },
+            {
+              key: "updateReturnByDvat",
+              label: "Update Return By DVAT",
+              children: (
+                <Card>
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded">
+                      <h3 className="font-bold text-blue-800 mb-2">
+                        📊 Update Returns for Single DVAT User
+                      </h3>
+                      <p className="text-blue-700 text-sm">
+                        This will process and update all PAID returns for a specific DVAT user. It calculates R4/R5 turnover, net tax, interest, and penalty, then updates the returns_01_work table with computed values.
+                      </p>
+                    </div>
+
+                    <Form layout="vertical" className="space-y-4">
+                      <Form.Item label="DVAT ID" required>
+                        <Input
+                          placeholder="Enter DVAT04 ID"
+                          type="number"
+                          value={updateReturnDvatId}
+                          onChange={(e) => setUpdateReturnDvatId(e.target.value)}
+                        />
+                        <small className="text-gray-500">
+                          Enter the specific DVAT ID to update all their PAID returns (ORIGINAL or REVISED type only)
+                        </small>
+                      </Form.Item>
+
+                      <Button
+                        type="primary"
+                        onClick={handleUpdateReturnByDvat}
+                        loading={loading}
+                        size="large"
+                        block
+                        danger
+                      >
+                        Update Returns for DVAT User
+                      </Button>
+                    </Form>
+
+                    {loading && (
+                      <div className="mt-6 flex justify-center">
+                        <Spin size="large" />
+                      </div>
+                    )}
+
+                    {result && activeTab === "updateReturnByDvat" && (
+                      <div className="mt-6 space-y-4">
+                        <Card
+                          type="inner"
+                          title="Response Status"
+                          style={{
+                            backgroundColor: result.status
+                              ? "#f6ffed"
+                              : "#fff1f0",
+                            borderColor: result.status ? "#b7eb8f" : "#ffccc7",
+                          }}
+                        >
+                          <div className="space-y-2">
+                            <div>
+                              <strong>Status:</strong>{" "}
+                              <span
+                                className={
+                                  result.status
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }
+                              >
+                                {result.status ? "✓ Success" : "✗ Failed"}
+                              </span>
+                            </div>
+                            <div>
+                              <strong>Message:</strong> {result.message}
+                            </div>
+                            {result.data && (
+                              <div>
+                                <strong>Last Processed Return ID:</strong>{" "}
+                                {result.data.id}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+
+                        <Card type="inner" title="Full JSON Response">
+                          <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96 text-xs">
+                            {JSON.stringify(result, null, 2)}
+                          </pre>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
                 </Card>
               ),
             },

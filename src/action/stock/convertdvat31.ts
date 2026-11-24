@@ -302,6 +302,10 @@ const ConvertDvat31 = async (
         const existingUrnNumbers = await tx.returns_entry.findMany({
           where: {
             urn_number: { in: urnNumbers },
+            deletedAt: null,
+            deletedById: null,
+            returns_01Id: returnInvoice.id,
+            dvat_type: DvatType.DVAT_31,
           },
           select: {
             urn_number: true,
