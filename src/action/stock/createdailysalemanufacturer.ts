@@ -109,6 +109,13 @@ const CreateDailySaleManufacturer = async (
     const ref_no: string = nanoid();
 
     const result = await prisma.$transaction(async (prisma) => {
+      // Validate that payload DVAT ID matches current user's DVAT ID
+      if (payload.dvatid !== currentDvatId) {
+        throw new Error(
+          "Unauthorized: This DVAT ID does not belong to your account.",
+        );
+      }
+
       const purchaser_response = await prisma.tin_number_master.findFirst({
         where: {
           status: "ACTIVE",

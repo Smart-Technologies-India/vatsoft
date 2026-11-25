@@ -16,7 +16,6 @@ interface BulkDailySaleEntry {
   amount: string;
   vatamount: string;
   amount_unit: string;
-  createdById: number;
   against_cfrom: boolean;
   is_against_fform: boolean;
   is_exempt?: boolean;
@@ -63,6 +62,21 @@ const BulkDailySale = async (
 
     const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwyz", 12);
 
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
     let createdCount = 0;
     let failedCount = 0;
     const failedEntries: Array<{
@@ -80,6 +94,77 @@ const BulkDailySale = async (
         for (const entry of payload.entries) {
           let commodityName: string | undefined;
           try {
+            // Validate that entry DVAT ID matches current user's DVAT ID
+            if (entry.dvatid !== currentDvatId) {
+              failedEntries.push({
+                invoice_number: entry.invoice_number,
+                error: "Unauthorized: This DVAT ID does not belong to your account.",
+                commodity_id: entry.commodityid,
+                invoice_date: entry.invoice_date,
+                quantity: entry.quantity,
+              });
+              failedCount++;
+              continue;
+            }
+
+            const invoiceDate = new Date(entry.invoice_date);
+            const april2026Start = new Date(2026, 3, 1);
+
+            if (invoiceDate < april2026Start) {
+              failedEntries.push({
+                invoice_number: entry.invoice_number,
+                error: "The return upto March 2026 has to be filed on old portal.",
+                commodity_id: entry.commodityid,
+                invoice_date: entry.invoice_date,
+                quantity: entry.quantity,
+              });
+              failedCount++;
+              continue;
+            }
+
+            const invoiceMonthName = monthNames[invoiceDate.getMonth()];
+            const invoiceYear = invoiceDate.getFullYear().toString();
+
+            // Check if return is filed
+            const filedReturnFiling = await tx.return_filing.findFirst({
+              where: {
+                deletedAt: null,
+                deletedById: null,
+                dvatid: entry.dvatid,
+                year: invoiceYear,
+                month: invoiceMonthName,
+                filing_status: true,
+                OR: [{ return_status: "FILED" }, { return_status: "LATEFILED" }],
+              },
+            });
+
+            const paidReturn = await tx.returns_01.findFirst({
+              where: {
+                deletedAt: null,
+                deletedById: null,
+                dvat04Id: entry.dvatid,
+                year: invoiceYear,
+                month: invoiceMonthName,
+                OR: [{ return_type: "REVISED" }, { return_type: "ORIGINAL" }],
+                rr_number: {
+                  not: "",
+                },
+              },
+            });
+
+            if (filedReturnFiling || paidReturn) {
+              failedEntries.push({
+                invoice_number: entry.invoice_number,
+                error: `The return for ${invoiceMonthName} is already filed. Kindly file revise return.`,
+                commodity_id: entry.commodityid,
+                commodity_name: commodityName,
+                invoice_date: entry.invoice_date,
+                quantity: entry.quantity,
+              });
+              failedCount++;
+              continue;
+            }
+
             const ref_no: string = nanoid();
 
             // Get commodity name
@@ -226,6 +311,11 @@ const BulkDailySale = async (
                       purchaser_response.tin_number.startsWith("25") ||
                       purchaser_response.tin_number.startsWith("26")
                     ),
+                is_paid: entry.invoice_date < new Date("2026-11-01"),
+                batch_name: entry.batch_name ?? undefined,
+              },
+              include: {
+                seller_tin_number: true,
               },
             });
 
@@ -261,6 +351,80 @@ const BulkDailySale = async (
                 },
                 data: {
                   quantity: Math.max(0, isexist.quantity - entry.quantity),
+                },
+              });
+            }
+
+            // Create daily purchase if applicable
+            const userstock = await tx.dvat04.findFirst({
+              where: {
+                deletedAt: null,
+                deletedById: null,
+                tinNumber: daily_sale_response.seller_tin_number.tin_number,
+              },
+            });
+
+            if (userstock) {
+              if (
+                purchaser_response.tin_number.startsWith("25") ||
+                purchaser_response.tin_number.startsWith("26") ||
+                ![1, 2, 821].includes(purchaser_response.id)
+              ) {
+                const saller_response = await tx.tin_number_master.findFirst({
+                  where: {
+                    status: "ACTIVE",
+                    deletedAt: null,
+                    tin_number: seller_dvat.tinNumber,
+                  },
+                });
+
+                if (!saller_response) {
+                  failedEntries.push({
+                    invoice_number: entry.invoice_number,
+                    error: "Seller TIN number not found (for purchase).",
+                    commodity_id: entry.commodityid,
+                    commodity_name: commodityName,
+                    invoice_date: entry.invoice_date,
+                    quantity: entry.quantity,
+                  });
+                  failedCount++;
+                  continue;
+                }
+
+                await tx.daily_purchase.create({
+                  data: {
+                    dvat04Id: userstock.id,
+                    seller_tin_numberId: saller_response.id,
+                    invoice_number: entry.invoice_number,
+                    invoice_date: entry.invoice_date,
+                    commodity_masterId: entry.commodityid,
+                    quantity: entry.quantity,
+                    tax_percent: entry.tax_percent,
+                    amount: entry.amount,
+                    amount_unit: entry.amount_unit,
+                    vatamount: entry.vatamount,
+                    is_dvat_30a: !(
+                      seller_dvat.tinNumber.startsWith("25") ||
+                      seller_dvat.tinNumber.startsWith("26")
+                    ),
+                    createdById: currentUserId,
+                    is_local:
+                      seller_dvat.tinNumber.startsWith("25") ||
+                      seller_dvat.tinNumber.startsWith("26"),
+                    urn_number: ref_no,
+                    payment_status: entry.invoice_date < new Date("2026-11-01")
+                      ? "PAID"
+                      : "DUE",
+                  },
+                });
+              }
+            } else {
+              await tx.daily_sale.update({
+                where: {
+                  id: daily_sale_response.id,
+                },
+                data: {
+                  is_accept: true,
                 },
               });
             }

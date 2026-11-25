@@ -509,6 +509,8 @@ const DailySale = (props: DailySaleProviderProps) => {
 
     date.setDate(date.getDate() + 1);
 
+    
+
     // Use MANUFACTURER action for MANUFACTURER commodity, otherwise use regular action
     const stock_response =
       dvatdata?.commodity === "MANUFACTURER" || [821, 35].includes(dvatdata?.id)

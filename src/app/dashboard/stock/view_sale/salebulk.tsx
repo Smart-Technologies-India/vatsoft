@@ -527,7 +527,6 @@ const SaleBulkUpload = (props: SaleBulkUploadProps) => {
         amount: taxableValue.toFixed(2),
         vatamount: vatValue.toFixed(2),
         amount_unit: amountUnit.toFixed(2),
-        createdById: userid,
         against_cfrom: row.against_cfrom,
         is_against_fform: row.is_against_fform,
         is_exempt: row.is_exempt,

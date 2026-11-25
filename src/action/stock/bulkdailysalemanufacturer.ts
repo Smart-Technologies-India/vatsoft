@@ -16,7 +16,6 @@ interface BulkDailySaleManufacturerEntry {
   amount: string;
   vatamount: string;
   amount_unit: string;
-  createdById: number;
   against_cfrom: boolean;
   is_against_fform: boolean;
   is_exempt?: boolean;
@@ -96,6 +95,19 @@ const BulkDailySaleManufacturer = async (
         for (const entry of payload.entries) {
           let commodityName: string | undefined;
           try {
+            // Validate that entry DVAT ID matches current user's DVAT ID
+            if (entry.dvatid !== currentDvatId) {
+              failedEntries.push({
+                invoice_number: entry.invoice_number,
+                error: "Unauthorized: This DVAT ID does not belong to your account.",
+                commodity_id: entry.commodityid,
+                invoice_date: entry.invoice_date,
+                quantity: entry.quantity,
+              });
+              failedCount++;
+              continue;
+            }
+
             // Get commodity name
             const commodity = await tx.commodity_master.findFirst({
               where: {
