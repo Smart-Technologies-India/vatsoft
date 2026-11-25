@@ -45,17 +45,18 @@ export const PaymentButtons: React.FC<PaymentButtonsProps> = ({
         </>
       ) : (
         <>
-          {selectedGroup && walletBalance < selectedGroup.totalVatAmount && (
-            <div className="text-xs text-red-600 flex items-center">
-              ⚠️ Insufficient wallet balance (₹{walletBalance.toFixed(2)})
-            </div>
-          )}
+          {selectedGroup &&
+            walletBalance < selectedGroup.totalVatAmount - 0.01 && (
+              <div className="text-xs text-red-600 flex items-center">
+                ⚠️ Insufficient wallet balance (₹{walletBalance.toFixed(2)})
+              </div>
+            )}
           <button
             onClick={onPayByWallet}
             disabled={
               isWalletPaymentLoading ||
               !selectedGroup ||
-              walletBalance < selectedGroup.totalVatAmount
+              walletBalance < selectedGroup.totalVatAmount - 0.01
             }
             className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
           >

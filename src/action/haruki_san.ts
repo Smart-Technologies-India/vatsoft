@@ -528,7 +528,9 @@ async function writeProcessedReturnData(
           penaltypaidchallan +
           otherpaidchallan
         ).toFixed(2),
-        excess_cash_next_month: thebalance.excessCash().toFixed(2),
+        excess_cash_next_month: (
+          thebalance.excessCash() - (value > 0 ? Math.abs(value) : 0)
+        ).toFixed(2),
         excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
         status: "VERIFY",
         remark: "",
@@ -579,7 +581,9 @@ async function writeProcessedReturnData(
           penaltypaidchallan +
           otherpaidchallan
         ).toFixed(2),
-        excess_cash_next_month: thebalance.excessCash().toFixed(2),
+        excess_cash_next_month: (
+          thebalance.excessCash() - (value > 0 ? Math.abs(value) : 0)
+        ).toFixed(2),
         excess_itc_next_month: thebalance.balance_carried_forward().toFixed(2),
         status: "VERIFY",
         remark: "",

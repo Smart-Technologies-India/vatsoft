@@ -21,6 +21,7 @@ export const PayByWalletLiquor = async (input: {
   isAddItem?: boolean;
 }): Promise<PayByWalletLiquorResponse> => {
   try {
+    console.log("PayByWalletLiquor input:", input);
     const dvatId = await getCurrentDvatId();
 
     if (!dvatId) {
@@ -47,6 +48,8 @@ export const PayByWalletLiquor = async (input: {
       };
     }
 
+
+    
     // Calculate wallet deduction
     const walletDeduction = Math.min(oldWallet, totalVat);
     const newWallet = oldWallet - walletDeduction;

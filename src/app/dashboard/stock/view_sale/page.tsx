@@ -194,10 +194,7 @@ const DocumentWiseDetails = () => {
     setIsPaid,
   } = usePaymentState();
 
-  const {
-    isDrawerOpen,
-    setIsDrawerOpen,
-  } = usePostPaymentAddItem();
+  const { isDrawerOpen, setIsDrawerOpen } = usePostPaymentAddItem();
 
   const [filedReturnPeriods, setFiledReturnPeriods] = useState<Set<string>>(
     new Set(),
@@ -591,6 +588,7 @@ const DocumentWiseDetails = () => {
         sellerId: selectedGroup.seller_tin_number.id,
         invoiceDate: selectedGroup.invoice_date,
       });
+      console.log(response);
 
       if (!response.status) {
         toast.error(response.message);
@@ -2392,6 +2390,7 @@ const DocumentWiseDetails = () => {
                   </label>
                   <Select
                     size="small"
+                    className="w-80"
                     value={acceptStatusFilter}
                     onChange={(value) => setAcceptStatusFilter(value as any)}
                     options={[

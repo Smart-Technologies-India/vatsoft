@@ -1748,7 +1748,7 @@ const DocumentWiseDetails = () => {
                           </div>
                         ) : (
                           <>
-                            {walletBalance < calculateVatPayable() && (
+                            {walletBalance < calculateVatPayable() - 0.01 && (
                               <div className="text-xs text-red-600 flex items-center">
                                 ⚠️ Insufficient wallet balance (₹
                                 {walletBalance.toFixed(2)})
@@ -1758,7 +1758,7 @@ const DocumentWiseDetails = () => {
                               onClick={handlePayByWallet}
                               disabled={
                                 isWalletPaymentLoading ||
-                                walletBalance < calculateVatPayable()
+                                walletBalance < calculateVatPayable() - 0.01
                               }
                               className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
                             >
@@ -2328,7 +2328,7 @@ const DocumentWiseDetails = () => {
                   </label>
                   <Select
                     size="small"
-                    className="w-full"
+                    className="w-80"
                     value={acceptStatusFilter}
                     onChange={(value) => setAcceptStatusFilter(value as any)}
                     options={[
