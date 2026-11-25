@@ -562,7 +562,7 @@ const DocumentWiseDetails = () => {
 
     const totalAmount = selectedGroup.totalVatAmount;
 
-    if (walletBalance < totalAmount) {
+    if (walletBalance < totalAmount - 0.01) {
       toast.error(
         `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(
           2,

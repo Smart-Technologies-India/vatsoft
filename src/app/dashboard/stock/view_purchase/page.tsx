@@ -1139,7 +1139,7 @@ const DocumentWiseDetails = () => {
 
     const vatPayable = calculateVatPayable();
 
-    if (walletBalance < vatPayable) {
+    if (walletBalance < vatPayable - 0.01) {
       toast.error(
         `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(
           2,

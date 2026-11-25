@@ -371,10 +371,11 @@ const PostPaymentAddItemFormContent: React.FC<
       }
     }
 
-    // Check wallet balance
-    if (walletBalance < parseFloat(vatamount)) {
+    // Check wallet balance with epsilon tolerance for floating-point precision
+    const requiredAmount = parseFloat(vatamount);
+    if (walletBalance < requiredAmount - 0.01) {
       return toast.error(
-        `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(2)}, Required: ₹${parseFloat(vatamount).toFixed(2)}`,
+        `Insufficient wallet balance. Available: ₹${walletBalance.toFixed(2)}, Required: ₹${requiredAmount.toFixed(2)}`,
       );
     }
 

@@ -41,15 +41,13 @@ export const PayByWalletLiquor = async (input: {
     const totalVat = parseFloat(input.totalAmount);
 
     // Check if wallet has enough balance
-    if (oldWallet < totalVat) {
+    if (oldWallet < totalVat - 0.01) {
       return {
         status: false,
         message: `Insufficient wallet balance. Available: ₹${oldWallet.toFixed(2)}, Required: ₹${totalVat.toFixed(2)}`,
       };
     }
 
-
-    
     // Calculate wallet deduction
     const walletDeduction = Math.min(oldWallet, totalVat);
     const newWallet = oldWallet - walletDeduction;

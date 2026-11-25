@@ -41,8 +41,8 @@ export const PayPurchaseByWalletLiquor = async (input: {
     const oldWallet = parseFloat(dvat04.wallet || "0");
     const vatPayable = parseFloat(input.vatPayable);
 
-    // Check if wallet has enough balance
-    if (oldWallet < vatPayable) {
+    // Check if wallet has enough balance with epsilon tolerance for floating-point precision
+    if (oldWallet < vatPayable - 0.01) {
       return {
         status: false,
         message: `Insufficient wallet balance. Available: ₹${oldWallet.toFixed(2)}, Required: ₹${vatPayable.toFixed(2)}`,
