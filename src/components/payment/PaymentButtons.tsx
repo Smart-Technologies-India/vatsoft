@@ -39,7 +39,7 @@ export const PaymentButtons: React.FC<PaymentButtonsProps> = ({
                 onClick={onAddItem}
                 className="text-sm bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white py-1.5 px-4 rounded"
               >
-                Add Item
+                Add/Delete Item
               </button>
             )}
         </>

@@ -25,10 +25,8 @@ const TestReturn = async (
 
   try {
     const BATCH_SIZE = 1000;
+    // Fiscal year order: April, May, June, ..., March (for VAT purposes)
     const monthOrder = [
-      "January",
-      "February",
-      "March",
       "April",
       "May",
       "June",
@@ -38,6 +36,9 @@ const TestReturn = async (
       "October",
       "November",
       "December",
+      "January",
+      "February",
+      "March",
     ];
 
     // Get total count of returns to process
@@ -66,97 +67,97 @@ const TestReturn = async (
     let totalFailed = 0;
     const failedRecords: Array<{ id: number; error: string }> = [];
 
-    // Process all returns in batches using pagination
-    for (let skip = 0; skip < totalCount; skip += BATCH_SIZE) {
-      const batch = await prisma.returns_01.findMany({
-        where: {
-          deletedAt: null,
-          deletedById: null,
-          status: "PAID",
-          OR: [
-            {
-              return_type: "REVISED",
-            },
-            {
-              return_type: "ORIGINAL",
-            },
-          ],
-        },
-        include: {
-          dvat04: true,
-        },
-        skip: skip,
-        take: BATCH_SIZE,
-        orderBy: {
-          id: "asc",
-        },
-      });
+    // Fetch ALL records and sort them globally by year and month
+    const allReturns = await prisma.returns_01.findMany({
+      where: {
+        deletedAt: null,
+        deletedById: null,
+        status: "PAID",
+        OR: [
+          {
+            return_type: "REVISED",
+          },
+          {
+            return_type: "ORIGINAL",
+          },
+        ],
+      },
+      include: {
+        dvat04: true,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
 
-      if (batch.length === 0) break;
+    // Sort ALL records by year and month (fiscal year: April to March)
+    allReturns.sort((a, b) => {
+      const yearA = parseInt(a.year);
+      const yearB = parseInt(b.year);
+      const monthIndexA = monthOrder.indexOf(a.month ?? "");
+      const monthIndexB = monthOrder.indexOf(b.month ?? "");
+      
+      // Sort by year first
+      if (yearA !== yearB) {
+        return yearA - yearB;
+      }
+      // Then by fiscal month order (April=0, May=1, ..., March=11)
+      return monthIndexA - monthIndexB;
+    });
 
-      // Sort this batch by year and month
-      batch.sort((a, b) => {
-        const yearDiff = parseInt(a.year) - parseInt(b.year);
-        if (yearDiff !== 0) return yearDiff;
-        return (
-          monthOrder.indexOf(a.month ?? "") - monthOrder.indexOf(b.month ?? "")
-        );
-      });
-
-      // Process each return in the batch with individual transactions
-      for (const returnItem of batch) {
-        try {
-          // Process computations OUTSIDE transaction first
-          const updateresponse = await prisma.returns_01.findFirst({
-            where: {
-              id: returnItem.id,
-            },
-            include: {
-              dvat04: true,
-            },
-          });
-
-          if (!updateresponse) {
-            throw new Error("Unable to fetch return data");
-          }
-
-          // Pre-process all heavy computations outside the transaction
-          const processedData = await calculateReturnMetrics(
-            prisma,
-            updateresponse,
-            updateresponse.dvat04.frequencyFilings === "QUARTERLY",
-          );
-
-          // Only do lightweight DB writes in transaction
-          await prisma.$transaction(
-            async (txPrisma) => {
-              await writeProcessedReturnData(
-                txPrisma,
-                updateresponse,
-                processedData,
-              );
-            },
-            {
-              maxWait: 30000,
-              timeout: 15000, // Reduced timeout since transaction is now lightweight
-            },
-          );
-
-          totalProcessed++;
-          processedResult = updateresponse;
-        } catch (itemError) {
-          totalFailed++;
-          const errorMessage =
-            itemError instanceof Error ? itemError.message : String(itemError);
-          failedRecords.push({
+    // Process all records in order
+    for (const returnItem of allReturns) {
+      try {
+        // Process computations OUTSIDE transaction first
+        const updateresponse = await prisma.returns_01.findFirst({
+          where: {
             id: returnItem.id,
-            error: errorMessage,
-          });
-          // Log error but continue processing next record
-          console.error(
-            `Failed to process return ID ${returnItem.id}: ${errorMessage}`,
-          );
+          },
+          include: {
+            dvat04: true,
+          },
+        });
+
+        if (!updateresponse) {
+          throw new Error("Unable to fetch return data");
         }
+
+        // Pre-process all heavy computations outside the transaction
+        const processedData = await calculateReturnMetrics(
+          prisma,
+          updateresponse,
+          updateresponse.dvat04.frequencyFilings === "QUARTERLY",
+        );
+
+        // Only do lightweight DB writes in transaction
+        await prisma.$transaction(
+          async (txPrisma) => {
+            await writeProcessedReturnData(
+              txPrisma,
+              updateresponse,
+              processedData,
+            );
+          },
+          {
+            maxWait: 30000,
+            timeout: 15000, // Reduced timeout since transaction is now lightweight
+          },
+        );
+
+        totalProcessed++;
+        processedResult = updateresponse;
+      } catch (itemError) {
+        totalFailed++;
+        const errorMessage =
+          itemError instanceof Error ? itemError.message : String(itemError);
+        failedRecords.push({
+          id: returnItem.id,
+          error: errorMessage,
+        });
+        // Log error but continue processing next record
+        console.error(
+          `Failed to process return ID ${returnItem.id}: ${errorMessage}`,
+        );
       }
     }
 

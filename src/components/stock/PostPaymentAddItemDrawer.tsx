@@ -48,7 +48,7 @@ export const PostPaymentAddItemDrawer: React.FC<
 
   return (
     <Drawer
-      title="Add Item After Payment"
+      title="Add/Delete Item After Payment"
       placement="left"
       onClose={onClose}
       open={isOpen}
@@ -177,7 +177,7 @@ const PostPaymentAddItemFormContent: React.FC<
       // Load added items for this invoice
       if (selectedGroup && selectedGroup.invoice_number) {
         const filteredAddedItems = selectedGroup.records.filter(
-          (record) => record.is_paid && !record.deletedAt,
+          (record) => record.is_paid && !record.deletedAt && !record.is_accept,
         );
         setAddedItems(
           filteredAddedItems.map((item) => ({
@@ -448,51 +448,6 @@ const PostPaymentAddItemFormContent: React.FC<
           </div>
         </div>
 
-        {/* Added Items Section */}
-        {addedItems.length > 0 && (
-          <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded">
-            <p className="text-xs font-semibold text-green-600 uppercase mb-2">
-              ✅ Items Already Added ({addedItems.length})
-            </p>
-            <div className="space-y-2">
-              {addedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between items-center p-2 bg-white border border-green-200 rounded text-sm"
-                >
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800">
-                      {item.product_name}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      Qty: {item.quantity} {item.quantityCount} | Amount: ₹
-                      {parseFloat(item.amount).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      | VAT: ₹
-                      {parseFloat(item.vatamount).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setItemToDelete(item.id);
-                      setIsDeleteModalOpen(true);
-                    }}
-                    className="ml-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Item Selection */}
         <div>
           <MultiSelect<DailySaleFormPostPayment>
@@ -625,6 +580,51 @@ const PostPaymentAddItemFormContent: React.FC<
             {isSubmitting ? "Processing..." : "Pay & Add Item"}
           </button>
         </div>
+        <div className="h-10"></div>
+        {/* Added Items Section */}
+        {addedItems.length > 0 && (
+          <div className="space-y-2 p-3 bg-green-50 border border-green-200 rounded">
+            <p className="text-xs font-semibold text-green-600 uppercase mb-2">
+              ✅ Items Already Added ({addedItems.length})
+            </p>
+            <div className="space-y-2">
+              {addedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center p-2 bg-white border border-green-200 rounded text-sm"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800">
+                      {item.product_name}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Qty: {item.quantity} {item.quantityCount} | Amount: ₹
+                      {parseFloat(item.amount).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      | VAT: ₹
+                      {parseFloat(item.vatamount).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setItemToDelete(item.id);
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="ml-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </form>
 
       {/* Payment Confirmation Modal */}
