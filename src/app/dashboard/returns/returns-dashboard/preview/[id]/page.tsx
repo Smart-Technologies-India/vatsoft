@@ -1,12 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import getPdfReturn from "@/action/return/getpdfreturn";
-import {
-  encryptURLData,
-  formatDateTime,
-  formateDate,
-  getPrismaDatabaseDate,
-} from "@/utils/methods";
+import { encryptURLData, formatDateTime, formateDate } from "@/utils/methods";
 import {
   challan,
   dvat04,
@@ -817,11 +812,7 @@ const Dvat16ReturnPreview = () => {
                         </td>
                         <td className="border border-black px-2 leading-4 text-[0.6rem]">
                           {entry.transaction_date
-                            ? formatDateTime(
-                                getPrismaDatabaseDate(
-                                  new Date(entry.transaction_date),
-                                ),
-                              )
+                            ? formatDateTime(new Date(entry.transaction_date))
                             : "-"}
                         </td>
                         <td className="border border-black px-2 leading-4 text-[0.6rem]">

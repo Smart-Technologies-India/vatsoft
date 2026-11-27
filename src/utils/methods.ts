@@ -214,21 +214,21 @@ export { getEnumData };
 
 // export { decrypt };
 
-const addPrismaDatabaseDate = (date: Date): Date => {
-  const newDate = new Date(date);
-  newDate.setHours(newDate.getHours() + 5);
-  newDate.setMinutes(newDate.getMinutes() + 30);
-  return newDate;
-};
+// const addPrismaDatabaseDate = (date: Date): Date => {
+//   const newDate = new Date(date);
+//   newDate.setHours(newDate.getHours() + 5);
+//   newDate.setMinutes(newDate.getMinutes() + 30);
+//   return newDate;
+// };
 
-const getPrismaDatabaseDate = (date: Date): Date => {
-  const newDate = new Date(date);
-  newDate.setHours(newDate.getHours() - 5);
-  newDate.setMinutes(newDate.getMinutes() - 30);
-  return newDate;
-};
+// const getPrismaDatabaseDate = (date: Date): Date => {
+//   const newDate = new Date(date);
+//   newDate.setHours(newDate.getHours() - 5);
+//   newDate.setMinutes(newDate.getMinutes() - 30);
+//   return newDate;
+// };
 
-export { addPrismaDatabaseDate, getPrismaDatabaseDate };
+// export { addPrismaDatabaseDate, getPrismaDatabaseDate };
 
 // multiplication table
 const d = [

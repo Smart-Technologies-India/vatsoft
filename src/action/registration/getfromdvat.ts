@@ -1,7 +1,7 @@
 "use server";
 import { getCurrentUserId } from "@/lib/auth";
 
-import { addPrismaDatabaseDate, errorToString } from "@/utils/methods";
+import { errorToString } from "@/utils/methods";
 import { ApiResponseType, createResponse } from "@/models/response";
 import prisma from "../../../prisma/database";
 import { dvat04, registration, returns_01 } from "@prisma/client";
@@ -11,7 +11,7 @@ interface GetFromDvatPayload {
 }
 
 const GetFromDvat = async (
-  payload: GetFromDvatPayload
+  payload: GetFromDvatPayload,
 ): Promise<ApiResponseType<(registration & { dvat04: dvat04 }) | null>> => {
   const functionname: string = GetFromDvat.name;
   try {

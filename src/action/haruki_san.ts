@@ -96,7 +96,7 @@ const TestReturn = async (
       const yearB = parseInt(b.year);
       const monthIndexA = monthOrder.indexOf(a.month ?? "");
       const monthIndexB = monthOrder.indexOf(b.month ?? "");
-      
+
       // Sort by year first
       if (yearA !== yearB) {
         return yearA - yearB;
@@ -154,10 +154,6 @@ const TestReturn = async (
           id: returnItem.id,
           error: errorMessage,
         });
-        // Log error but continue processing next record
-        console.error(
-          `Failed to process return ID ${returnItem.id}: ${errorMessage}`,
-        );
       }
     }
 

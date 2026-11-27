@@ -6,7 +6,6 @@ import {
   formatDateTime,
   formateDate,
   getDaysBetweenDates,
-  getPrismaDatabaseDate,
 } from "@/utils/methods";
 
 import {
@@ -617,10 +616,8 @@ const Dvat16ReturnPreview = () => {
                         </td>
                         <td className="border border-black px-2 leading-4 text-[0.6rem]">
                           {formatDateTime(
-                            getPrismaDatabaseDate(
-                              new Date(
-                                challan.transaction_date ?? challan.createdAt,
-                              ),
+                            new Date(
+                              challan.transaction_date ?? challan.createdAt,
                             ),
                           )}
                         </td>

@@ -1,12 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import GetReturnByIdWithQuarterly from "@/action/return/getreturnbyidwithquarterly";
-import {
-  decryptURLData,
-  formatDateTime,
-  formateDate,
-  getPrismaDatabaseDate,
-} from "@/utils/methods";
+import { decryptURLData, formatDateTime, formateDate } from "@/utils/methods";
 
 import {
   dvat04,
@@ -239,9 +234,7 @@ const AdminDvat16ReturnPreview = () => {
                             <td className="border border-black px-2 leading-4 text-[0.6rem]">
                               {challan.transaction_date
                                 ? formatDateTime(
-                                    getPrismaDatabaseDate(
-                                      new Date(challan.transaction_date),
-                                    ),
+                                    new Date(challan.transaction_date),
                                   )
                                 : "-"}
                             </td>

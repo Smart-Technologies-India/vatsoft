@@ -7,7 +7,6 @@ import {
   encryptURLData,
   formatDateTime,
   formateDate,
-  getPrismaDatabaseDate,
 } from "@/utils/methods";
 import {
   challan,
@@ -590,11 +589,7 @@ const AdminDvat16ReturnPreview = () => {
                         </td>
                         <td className="border border-black px-2 leading-4 text-[0.6rem]">
                           {entry.transaction_date
-                            ? formatDateTime(
-                                getPrismaDatabaseDate(
-                                  new Date(entry.transaction_date),
-                                ),
-                              )
+                            ? formatDateTime(new Date(entry.transaction_date))
                             : "-"}
                         </td>
                         <td className="border border-black px-2 leading-4 text-[0.6rem]">
