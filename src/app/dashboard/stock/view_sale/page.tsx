@@ -149,6 +149,15 @@ const DocumentWiseDetails = () => {
     }));
   };
 
+
+
+  const handleNavigateGeneratedInvoices = useCallback(() => {
+    setToolbarActionsOpen(false);
+    setTimeout(() => {
+      router.push("/dashboard/stock/view_generated_invoice");
+    }, 0);
+  }, [router]);
+
   const handelClose = (index: number) => {
     setOpenPopovers((prev) => ({
       ...prev,
@@ -549,11 +558,14 @@ const DocumentWiseDetails = () => {
       return;
     }
 
-    router.push(
-      `/dashboard/stock/sale_challan/${encryptURLData(
-        response.data.challanId.toString(),
-      )}`,
-    );
+    const challanId = response.data.challanId;
+    setTimeout(() => {
+      router.push(
+        `/dashboard/stock/sale_challan/${encryptURLData(
+          challanId.toString(),
+        )}`,
+      );
+    }, 0);
   };
 
   const handlePayByWallet = () => {
@@ -588,7 +600,6 @@ const DocumentWiseDetails = () => {
         sellerId: selectedGroup.seller_tin_number.id,
         invoiceDate: selectedGroup.invoice_date,
       });
-      console.log(response);
 
       if (!response.status) {
         toast.error(response.message);
@@ -853,22 +864,22 @@ const DocumentWiseDetails = () => {
   };
 
   const getMonthlyDueDate = (periodDate: Date): Date =>
-    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 10);
+    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 5);
 
   const getQuarterlyDueDate = (periodDate: Date): Date => {
     const month = periodDate.getMonth();
     const year = periodDate.getFullYear();
 
     if (month <= 2) {
-      return new Date(year, 3, 10); // Jan-Mar -> 10 Apr
+      return new Date(year, 3, 5); // Jan-Mar -> 5 Apr
     }
     if (month <= 5) {
-      return new Date(year, 6, 10); // Apr-Jun -> 10 Jul
+      return new Date(year, 6, 5); // Apr-Jun -> 5 Jul
     }
     if (month <= 8) {
-      return new Date(year, 9, 10); // Jul-Sep -> 10 Oct
+      return new Date(year, 9, 5); // Jul-Sep -> 5 Oct
     }
-    return new Date(year + 1, 0, 10); // Oct-Dec -> 10 Jan (next year)
+    return new Date(year + 1, 0, 5); // Oct-Dec -> 5 Jan (next year)
   };
 
   const canGenerateDvat31 = (): { allowed: boolean; message?: string } => {
@@ -895,13 +906,13 @@ const DocumentWiseDetails = () => {
     if (filingFrequency === "QUARTERLY") {
       return {
         allowed: false,
-        message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+        message: `Returns for a tax period shall be available for generation only on or after the 5th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
       };
     }
 
     return {
       allowed: false,
-      message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+      message: `Returns for a tax period shall be available for generation only on or after the 5th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
     };
   };
 
@@ -909,7 +920,7 @@ const DocumentWiseDetails = () => {
     async (): Promise<boolean> => {
       if (!dvatdata) return false;
 
-      // First, try to auto-accept eligible sales (older than 12 days)
+      // First, try to auto-accept eligible sales (older than 8 days)
       const autoAcceptResponse = await AutoAcceptSaleByDays({
         startDate: new Date(
           dateFilter.startDate ||
@@ -2165,10 +2176,7 @@ const DocumentWiseDetails = () => {
                 <Button
                   size="small"
                   type="default"
-                  onClick={() => {
-                    setToolbarActionsOpen(false);
-                    router.push("/dashboard/stock/tally_sale");
-                  }}
+                  onClick={handleNavigateTallySale}
                 >
                   Tally Sale
                 </Button>
@@ -2176,10 +2184,7 @@ const DocumentWiseDetails = () => {
               <Button
                 size="small"
                 type="default"
-                onClick={() => {
-                  setToolbarActionsOpen(false);
-                  router.push("/dashboard/stock/view_generated_invoice");
-                }}
+                onClick={handleNavigateGeneratedInvoices}
               >
                 Generated Invoices
               </Button>
@@ -2201,7 +2206,7 @@ const DocumentWiseDetails = () => {
                 )}
 
                 <Popover
-                  trigger={["hover", "click"]}
+                  trigger={["click"]}
                   placement="bottomRight"
                   open={toolbarActionsOpen}
                   onOpenChange={setToolbarActionsOpen}

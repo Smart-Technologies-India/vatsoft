@@ -499,7 +499,7 @@ const CformDetailsPage = () => {
             setSelectedReturnGroup(null);
           }}
           open={isReturnGroupModalOpen}
-          width={900}
+          size={900}
         >
           <div className="space-y-4">
             {/* Header Info */}
@@ -622,7 +622,7 @@ const CformDetailsPage = () => {
         placement="right"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
-        width={600}
+        size={600}
       >
         {selectedRecord && (
           <div className="space-y-4">

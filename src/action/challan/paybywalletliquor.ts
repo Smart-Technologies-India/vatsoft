@@ -21,7 +21,6 @@ export const PayByWalletLiquor = async (input: {
   isAddItem?: boolean;
 }): Promise<PayByWalletLiquorResponse> => {
   try {
-    console.log("PayByWalletLiquor input:", input);
     const dvatId = await getCurrentDvatId();
 
     if (!dvatId) {
@@ -69,7 +68,7 @@ export const PayByWalletLiquor = async (input: {
     // If data already exists and isAddItem is false, return early without creating/updating
     if (existingWalletHistory && !input.isAddItem) {
       return {
-        status: true,
+        status: false,
         message: "Payment record already exists. No changes made.",
         data: {
           old_wallet: oldWallet.toFixed(2),

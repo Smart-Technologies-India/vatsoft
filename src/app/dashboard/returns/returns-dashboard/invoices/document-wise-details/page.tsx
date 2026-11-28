@@ -28,23 +28,6 @@ import { toast } from "react-toastify";
 const DocumentWiseDetails = () => {
   const router = useRouter();
 
-  const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-    {},
-  );
-  const handleOpenChange = (newOpen: boolean, index: number) => {
-    setOpenPopovers((prev) => ({
-      ...prev,
-      [index]: newOpen,
-    }));
-  };
-
-  const handelClose = (index: number) => {
-    setOpenPopovers((prev) => ({
-      ...prev,
-      [index]: false,
-    }));
-  };
-
   const searchParams = useSearchParams();
 
   const [dvatdata, setDvatData] = useState<dvat04>();

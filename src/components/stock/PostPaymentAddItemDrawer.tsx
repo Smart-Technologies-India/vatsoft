@@ -52,7 +52,7 @@ export const PostPaymentAddItemDrawer: React.FC<
       placement="left"
       onClose={onClose}
       open={isOpen}
-      width={600}
+      size={600}
     >
       <PostPaymentAddItemForm
         selectedGroup={selectedGroup}

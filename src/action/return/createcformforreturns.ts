@@ -205,11 +205,9 @@ const CreateCFormForReturns = async (): Promise<
       let cformId: number;
 
       if (existingCForm) {
-        console.log("month", returns01.month, "year", returns01.year);
         cformId = existingCForm.id;
         result.skipped += entries.length;
       } else {
-        console.log("month", returns01.month, "year", returns01.year);
 
         // Create new C-Form for the quarter
 

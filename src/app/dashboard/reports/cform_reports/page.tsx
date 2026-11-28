@@ -599,7 +599,7 @@ const CFormReportsPage = () => {
         placement="right"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
-        width={500}
+        size={500}
       >
         {selectedRecord && (
           <div className="space-y-4">

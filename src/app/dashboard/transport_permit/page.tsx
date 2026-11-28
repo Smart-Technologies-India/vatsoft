@@ -1028,7 +1028,7 @@ const TransportPermit = () => {
         title="Blacklisted DVATs"
         onClose={() => setIsBlacklistDrawerOpen(false)}
         open={isBlacklistDrawerOpen}
-        width={1000}
+        size={1000}
         bodyStyle={{ padding: "0" }}
       >
         <Spin spinning={isLoadingBlacklist}>

@@ -309,23 +309,23 @@ const DocumentWiseDetails = () => {
   };
 
   const getMonthlyDueDate = (periodDate: Date): Date =>
-    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 10);
+    new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 5);
 
   const getQuarterlyDueDate = (periodDate: Date): Date => {
     const month = periodDate.getMonth();
     const year = periodDate.getFullYear();
 
     if (month <= 2) {
-      return new Date(year, 3, 10); // Jan-Mar -> 10 Apr
+      return new Date(year, 3, 5); // Jan-Mar -> 5 Apr
     }
     if (month <= 5) {
-      return new Date(year, 6, 10); // Apr-Jun -> 10 Jul
+      return new Date(year, 6, 5); // Apr-Jun -> 5 Jul
     }
     if (month <= 8) {
-      return new Date(year, 9, 10); // Jul-Sep -> 10 Oct
+      return new Date(year, 9, 5); // Jul-Sep -> 5 Oct
     }
 
-    return new Date(year + 1, 0, 10); // Oct-Dec -> 10 Jan next year
+    return new Date(year + 1, 0, 5); // Oct-Dec -> 5 Jan next year
   };
 
   const canGenerateDvat30A = (): { allowed: boolean; message?: string } => {
@@ -343,7 +343,7 @@ const DocumentWiseDetails = () => {
 
     return {
       allowed: false,
-      message: `Returns for a tax period shall be available for generation only on or after the 10th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
+      message: `Returns for a tax period shall be available for generation only on or after the 5th day of the month succeeding the applicable tax period. Next allowed date is ${formatEligibilityDate(dueDate)}.`,
     };
   };
 
@@ -2081,7 +2081,7 @@ const DocumentWiseDetails = () => {
                 )}
 
                 <Popover
-                  trigger={["hover", "click"]}
+                  trigger={["click"]}
                   placement="bottomRight"
                   open={toolbarActionsOpen}
                   onOpenChange={setToolbarActionsOpen}

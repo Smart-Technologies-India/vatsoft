@@ -80,6 +80,20 @@ const DeleteAddedItemAfterAccept = async (
         },
       });
 
+      await prisma.liquor_wallet_history.updateMany({
+        where: {
+          dvatId: payload.dvatId,
+          sellerId: payload.sellerId,
+          type: "DEBIT",
+          invoice_number: payload.invoiceNumber,
+          status: "ACTIVE",
+          deletedAt: null,
+        },
+        data: {
+          invoice_number: `${payload.invoiceNumber}-EDITED`
+        },
+      });
+
       // Return stock to stock table
       const stock = await prisma.stock.findFirst({
         where: {

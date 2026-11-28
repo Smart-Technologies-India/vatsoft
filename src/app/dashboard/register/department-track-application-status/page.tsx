@@ -510,7 +510,7 @@ const TrackAppliation = () => {
             title="Meaning of status"
             onClose={() => setIsDrawerOpen(false)}
             open={isDrawerOpen}
-            width={1000}
+            size={1000}
           >
             <Table className="border">
               <TableBody>

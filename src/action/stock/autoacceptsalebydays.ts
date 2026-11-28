@@ -69,20 +69,20 @@ const AutoAcceptSaleByDays = async (
       groupedSales.get(groupKey)!.push(sale);
     });
 
-    // Check each group for 12+ day rule
+    // Check each group for 8+ day rule
     const now = new Date();
-    const twelveHoursInMs = 12 * 24 * 60 * 60 * 1000; // 12 days in milliseconds
+    const twelveHoursInMs = 8 * 24 * 60 * 60 * 1000; // 8 days in milliseconds
     let acceptedCount = 0;
 
     for (const [groupKey, groupSales] of groupedSales) {
-      // Check if ALL sales in this group have createdAt older than 12 days
-      const allOlderThan12Days = groupSales.every((sale) => {
+      // Check if ALL sales in this group have createdAt older than 8 days
+      const allOlderThan8Days = groupSales.every((sale) => {
         const ageInMs = now.getTime() - new Date(sale.createdAt).getTime();
         return ageInMs > twelveHoursInMs;
       });
 
-      // If all sales are older than 12 days, accept the entire group
-      if (allOlderThan12Days) {
+      // If all sales are older than 8 days, accept the entire group
+      if (allOlderThan8Days) {
         const groupSaleIds = groupSales.map((s) => s.id);
 
         await prisma.daily_sale.updateMany({
@@ -118,7 +118,7 @@ const AutoAcceptSaleByDays = async (
     return createResponse({
       message:
         acceptedCount > 0
-          ? `Auto-accepted ${acceptedCount} pending sales that are older than 12 days.`
+          ? `Auto-accepted ${acceptedCount} pending sales that are older than 8 days.`
           : "No sales eligible for auto-acceptance.",
       functionname,
       data: { acceptedCount, pendingCount: remainingPendingSales },

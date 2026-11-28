@@ -39,22 +39,6 @@ import { toast } from "react-toastify";
 
 const DocumentWiseDetails = () => {
   const router = useRouter();
-  const [openPopovers, setOpenPopovers] = useState<{ [key: number]: boolean }>(
-    {},
-  );
-  const handleOpenChange = (newOpen: boolean, index: number) => {
-    setOpenPopovers((prev) => ({
-      ...prev,
-      [index]: newOpen,
-    }));
-  };
-
-  const handelClose = (index: number) => {
-    setOpenPopovers((prev) => ({
-      ...prev,
-      [index]: false,
-    }));
-  };
 
   const [isLoading, setLoading] = useState<boolean>(true);
 
@@ -89,7 +73,6 @@ const DocumentWiseDetails = () => {
     expiry: "",
     cvv: "",
   });
-
 
   const init = async () => {
     setLoading(true);
@@ -242,7 +225,10 @@ const DocumentWiseDetails = () => {
   const workflowSteps = useMemo(() => {
     const key = workflowGroup ? getInvoiceKey(workflowGroup) : "";
     return [
-      { label: "Accept invoice", done: key ? acceptedInvoices.includes(key) : false },
+      {
+        label: "Accept invoice",
+        done: key ? acceptedInvoices.includes(key) : false,
+      },
       { label: "Tax Paid", done: key ? taxPaidInvoices.includes(key) : false },
       { label: "Approve by refinery", done: false },
       { label: "Shipped", done: false },
@@ -466,11 +452,15 @@ const DocumentWiseDetails = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <p className="text-xs text-gray-600">Invoice Number</p>
-                  <p className="font-semibold">{workflowGroup.invoice_number}</p>
+                  <p className="font-semibold">
+                    {workflowGroup.invoice_number}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Invoice Date</p>
-                  <p className="font-semibold">{formateDate(workflowGroup.invoice_date)}</p>
+                  <p className="font-semibold">
+                    {formateDate(workflowGroup.invoice_date)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-600">Seller</p>
@@ -558,7 +548,6 @@ const DocumentWiseDetails = () => {
               >
                 {isTaxPaid(workflowGroup) ? "Tax Paid" : "Pay Tax"}
               </Button>
-         
             </div>
 
             <div className="rounded border border-gray-200 p-3">
@@ -575,7 +564,11 @@ const DocumentWiseDetails = () => {
                     >
                       {index + 1}
                     </span>
-                    <span className={step.done ? "text-emerald-700" : "text-gray-600"}>
+                    <span
+                      className={
+                        step.done ? "text-emerald-700" : "text-gray-600"
+                      }
+                    >
                       {step.label}
                     </span>
                   </div>
@@ -597,45 +590,66 @@ const DocumentWiseDetails = () => {
         <div className="space-y-3">
           <div className="rounded bg-gray-50 p-3 text-sm text-gray-700">
             <p>
-              Invoice: <span className="font-medium">{workflowGroup?.invoice_number}</span>
+              Invoice:{" "}
+              <span className="font-medium">
+                {workflowGroup?.invoice_number}
+              </span>
             </p>
             <p>
-              Payable Tax: <span className="font-medium">₹{workflowGroup?.totalVatAmount.toFixed(2) ?? "0.00"}</span>
+              Payable Tax:{" "}
+              <span className="font-medium">
+                ₹{workflowGroup?.totalVatAmount.toFixed(2) ?? "0.00"}
+              </span>
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Card Holder Name</label>
+            <label className="mb-1 block text-xs text-gray-600">
+              Card Holder Name
+            </label>
             <Input
               placeholder="Enter card holder name"
               value={paymentDetails.cardHolder}
               onChange={(e) =>
-                setPaymentDetails((prev) => ({ ...prev, cardHolder: e.target.value }))
+                setPaymentDetails((prev) => ({
+                  ...prev,
+                  cardHolder: e.target.value,
+                }))
               }
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-gray-600">Card Number</label>
+            <label className="mb-1 block text-xs text-gray-600">
+              Card Number
+            </label>
             <Input
               placeholder="1234 5678 9012 3456"
               maxLength={19}
               value={paymentDetails.cardNumber}
               onChange={(e) =>
-                setPaymentDetails((prev) => ({ ...prev, cardNumber: e.target.value }))
+                setPaymentDetails((prev) => ({
+                  ...prev,
+                  cardNumber: e.target.value,
+                }))
               }
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs text-gray-600">Expiry (MM/YY)</label>
+              <label className="mb-1 block text-xs text-gray-600">
+                Expiry (MM/YY)
+              </label>
               <Input
                 placeholder="MM/YY"
                 maxLength={5}
                 value={paymentDetails.expiry}
                 onChange={(e) =>
-                  setPaymentDetails((prev) => ({ ...prev, expiry: e.target.value }))
+                  setPaymentDetails((prev) => ({
+                    ...prev,
+                    expiry: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -646,7 +660,10 @@ const DocumentWiseDetails = () => {
                 maxLength={4}
                 value={paymentDetails.cvv}
                 onChange={(e) =>
-                  setPaymentDetails((prev) => ({ ...prev, cvv: e.target.value }))
+                  setPaymentDetails((prev) => ({
+                    ...prev,
+                    cvv: e.target.value,
+                  }))
                 }
               />
             </div>
@@ -678,10 +695,7 @@ const DocumentWiseDetails = () => {
         <div className="mb-3 pb-2 border-b">
           <h2 className="text-sm font-medium text-gray-900">Add Purchase</h2>
         </div>
-        <DailyPurchaseMasterProvider
-          setAddBox={setAddBox}
-          init={init}
-        />
+        <DailyPurchaseMasterProvider setAddBox={setAddBox} init={init} />
       </Drawer>
       <Modal
         title="Generate DVAT 30/30 A"
@@ -923,7 +937,6 @@ const DocumentWiseDetails = () => {
                                     <button
                                       onClick={() => {
                                         setDeleteBox(true);
-                                        handelClose(index);
                                       }}
                                       className="text-sm bg-white border hover:border-rose-500 hover:text-rose-600 text-gray-700 py-1 px-3 rounded"
                                     >

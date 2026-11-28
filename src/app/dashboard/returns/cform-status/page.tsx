@@ -406,7 +406,6 @@ const TrackAppliation = () => {
       }
     } catch (error: any) {
       toast.error("Error updating description");
-      console.error(error);
     } finally {
       setIsLoadingModal(false);
     }
